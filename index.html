@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hant-HK">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
@@ -7,11 +7,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Fruit Pop" />
-  <meta name="description" content="Your own sweet fruit merging game. Drop, match and grow a watermelon!" />
+  <meta name="description" content="Fruit Pop 七級人像合成遊戲！選擇玩家、合併相同人像球，挑戰最高分並與朋友比較成績。" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
-  <title>Fruit Pop · A juicy little merge game</title>
+  <title>Fruit Pop｜人像合成遊戲</title>
   <style>
     :root { --page:#fff5e9; --ink:#452e43; --muted:#9d8190; --card:#fffefa; --line:#f4dedd; --primary:#fc728b; --deep:#df4f78; --stage:#fff7ee; --stage2:#ffe9e7; }
     *, *::before, *::after { box-sizing:border-box; }
@@ -59,7 +59,7 @@
     .end-confirm-score {font-size:34px;font-weight:900;text-align:center;color:var(--deep);margin:0!important;}
     .modal { position:fixed; z-index:10; inset:0; padding:20px; background:#46314285; display:none; align-items:center; justify-content:center; backdrop-filter:blur(5px); }
     .modal.visible { display:flex; }
-    .modal-panel { background:#fffefa; border-radius:28px; width:min(100%,380px); padding:24px; box-shadow:0 15px 45px #422a4d36; animation:pop-in .22s ease; }
+     .modal-panel { background:#fffefa; border-radius:28px; width:min(100%,380px); padding:24px; max-height:88dvh; overflow-y:auto; box-shadow:0 15px 45px #422a4d36; animation:pop-in .22s ease; }
     .modal-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .modal-panel h2 { margin:0 0 13px; font-size:23px; letter-spacing:-.6px; }
     .modal-panel p, .modal-panel li { font-size:14px; color:#72596b; line-height:1.65; }
@@ -93,84 +93,84 @@
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brand-icon">🍉</div><div><h1 class="brand-title" id="gameName">Fruit Pop</h1><p class="brand-sub" id="currentPlayerLabel">Choose a player</p></div></div>
+    <div class="brand"><div class="brand-icon">🍉</div><div><h1 class="brand-title" id="gameName">Fruit Pop</h1><p class="brand-sub" id="currentPlayerLabel">請選擇玩家</p></div></div>
     <div class="actions">
-      <button class="icon-btn" id="leaderboardButton" aria-label="View player scores" title="Leaderboard">🏆</button>
-      <button class="icon-btn" id="soundButton" aria-label="Mute sound" title="Toggle sound">♫</button>
-      <button class="icon-btn" id="settingsButton" aria-label="Customize game" title="Customize">⚙</button>
-      <button class="icon-btn" id="restartButton" aria-label="Restart game" title="Restart">↻</button>
+      <button class="icon-btn" id="leaderboardButton" aria-label="查看玩家排行榜" title="排行榜">🏆</button>
+      <button class="icon-btn" id="soundButton" aria-label="靜音" title="切換音效">♫</button>
+      <button class="icon-btn" id="settingsButton" aria-label="自訂遊戲設定" title="自訂設定">⚙</button>
+      <button class="icon-btn" id="restartButton" aria-label="重新開始遊戲" title="重新開始">↻</button>
     </div>
   </header>
-  <div class="scorebar" aria-label="Game scores">
-    <div class="scorecard"><span class="score-label">Score</span><span class="score-num" id="score">0</span></div>
-    <div class="scorecard best"><span class="score-label">Best ⭐</span><span class="score-num" id="best">0</span></div>
-    <div class="scorecard"><span class="score-label">Up next</span><span class="next-fruit" id="nextFruit">🍓</span></div>
+  <div class="scorebar" aria-label="遊戲分數">
+    <div class="scorecard"><span class="score-label">目前分數</span><span class="score-num" id="score">0</span></div>
+    <div class="scorecard best"><span class="score-label">最高分 ⭐</span><span class="score-num" id="best">0</span></div>
+    <div class="scorecard"><span class="score-label">下一個球</span><span class="next-fruit" id="nextFruit">🍓</span></div>
   </div>
   <div class="board-frame">
     <div class="board-inner" id="gameContainer">
-      <canvas id="gameCanvas" width="360" height="520" aria-label="Face Merge game. Drag left or right, then release to drop a ball." role="img"></canvas>
+      <canvas id="gameCanvas" width="360" height="520" aria-label="人像合成遊戲。左右拖動以瞄準，鬆開手指即可放下人像球。" role="img"></canvas>
       <div class="game-over" id="gameOverOverlay" role="dialog" aria-modal="true" aria-labelledby="gameOverHeading">
-        <div class="end-card"><div class="end-emoji">🍉✨</div><h2 id="gameOverHeading">Nice try!</h2><p>Your juicy score</p><div class="end-score" id="finalScore">0</div><button class="main-btn" id="playAgain">Play again ↻</button><p><button class="text-btn" id="endLeaderboardButton">🏆 Player scores</button></p></div>
+        <div class="end-card"><div class="end-emoji">🍉✨</div><h2 id="gameOverHeading">遊戲結束！</h2><p>今次遊戲分數</p><div class="end-score" id="finalScore">0</div><button class="main-btn" id="playAgain">再玩一次 ↻</button><p><button class="text-btn" id="endLeaderboardButton">🏆 玩家排行榜</button></p></div>
       </div>
     </div>
   </div>
-  <div class="foot"><div class="tip"><span class="hint-icon">👆</span><span>Drag to aim · Release to drop</span></div><button class="text-btn" id="helpButton">How to play ?</button></div>
-  <button type="button" class="endgame-btn" id="endGameButton">⏹ End Game &amp; Save Score</button>
+  <div class="foot"><div class="tip"><span class="hint-icon">👆</span><span>左右拖動瞄準 · 鬆手放下</span></div><button class="text-btn" id="helpButton">玩法教學</button></div>
+  <button type="button" class="endgame-btn" id="endGameButton">⏹ 結束遊戲並儲存分數</button>
 </div>
 <div class="modal visible" id="startModal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
   <div class="modal-panel">
-    <h2 id="startTitle">Who's playing? 🎮</h2>
-    <p>Choose your name before each game.</p>
+    <h2 id="startTitle">誰要玩？🎮</h2>
+    <p>每次開始前，請選擇你的玩家名稱。</p>
     <div class="player-grid" id="playerChoices"></div>
-    <button class="main-btn modal-cta" id="startGameButton" disabled>Choose your name</button>
-    <button class="text-btn" style="display:block;margin:12px auto 0" id="startScoresButton">🏆 View player scores</button>
-    <p class="small-note" id="startCloudStatus">Local scores · Online setup pending</p>
+    <button class="main-btn modal-cta" id="startGameButton" disabled>請先選擇玩家</button>
+    <button class="text-btn" style="display:block;margin:12px auto 0" id="startScoresButton">🏆 查看排行榜</button>
+    <p class="small-note" id="startCloudStatus">本機分數 · 正在設定網上排行榜</p>
   </div>
 </div>
 <div class="modal" id="endConfirmModal" role="dialog" aria-modal="true" aria-labelledby="endConfirmTitle">
   <div class="modal-panel">
-    <h2 id="endConfirmTitle">End this game?</h2>
-    <p style="text-align:center;margin-bottom:7px">Your current score</p>
+    <h2 id="endConfirmTitle">確定結束遊戲？</h2>
+    <p style="text-align:center;margin-bottom:7px">目前分數</p>
     <p class="end-confirm-score" id="endingScore">0</p>
-    <p style="text-align:center">Choose <b>End &amp; Save Score</b> to finish this round and submit your result to the leaderboard. You cannot resume afterward.</p>
+    <p style="text-align:center">選擇<b>結束並儲存分數</b>，即會結束本局並將成績提交至排行榜。結束後將不能繼續本局。</p>
     <div class="end-choice">
-      <button type="button" class="main-btn" id="confirmEndButton">End &amp; Save Score</button>
-      <button type="button" class="continue-btn" id="continueGameButton">Continue Playing</button>
+      <button type="button" class="main-btn" id="confirmEndButton">結束並儲存分數</button>
+      <button type="button" class="continue-btn" id="continueGameButton">繼續遊戲</button>
     </div>
   </div>
 </div>
 <div class="modal" id="scoreboardModal" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
   <div class="modal-panel">
-    <div class="modal-head"><h2 id="leaderboardTitle">🏆 Player scores</h2><button class="close-btn" data-close="scoreboardModal" aria-label="Close">×</button></div>
-    <p>Best scores ranked from highest to lowest.</p>
-    <div class="scoreboard-scroll"><table class="scoreboard-table"><thead><tr><th>#</th><th>Player</th><th>Best</th><th>Last</th></tr></thead><tbody id="scoreboardRows"></tbody></table></div>
-    <p class="small-note" id="scoreboardCloudStatus">Local scores only. Online sharing needs Firebase setup.</p>
-    <button class="main-btn modal-cta" id="switchPlayerButton">Choose another player</button>
+    <div class="modal-head"><h2 id="leaderboardTitle">🏆 玩家排行榜</h2><button class="close-btn" data-close="scoreboardModal" aria-label="關閉">×</button></div>
+    <p>按照最高分由高至低排列。</p>
+    <div class="scoreboard-scroll"><table class="scoreboard-table"><thead><tr><th>#</th><th>玩家</th><th>最高分</th><th>最近分數</th></tr></thead><tbody id="scoreboardRows"></tbody></table></div>
+    <p class="small-note" id="scoreboardCloudStatus">目前只顯示本機分數，網上共用需要完成 Firebase 設定。</p>
+    <button class="main-btn modal-cta" id="switchPlayerButton">切換玩家</button>
   </div>
 </div>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle"><div class="modal-panel">
-  <div class="modal-head"><h2 id="helpTitle">How to play 🍒</h2><button class="close-btn" data-close="helpModal" aria-label="Close">×</button></div>
-  <ol><li><b>Drag</b> anywhere inside the game box to aim.</li><li><b>Release</b> your finger to drop a fruit.</li><li>When <b>two matching balls</b> touch, they become the next bigger face ball.</li><li>Keep balls below the dashed line. Merge all <b>7 face balls</b> for a huge score!</li></ol>
-  <button class="main-btn modal-cta" data-close="helpModal">Let's play!</button>
+  <div class="modal-head"><h2 id="helpTitle">玩法教學 🎮</h2><button class="close-btn" data-close="helpModal" aria-label="關閉">×</button></div>
+  <ol><li>在遊戲框內<b>左右拖動</b>，選擇人像球嘅掉落位置。</li><li><b>鬆開手指</b>，即可放下人像球。</li><li>當<b>兩個相同嘅人像球</b>碰在一起，就會合成下一級更大嘅人像球。</li><li>唔好畀人像球堆到虛線以上！合成<b>全部七級人像球</b>，挑戰更高分數！</li></ol>
+  <button class="main-btn modal-cta" data-close="helpModal">開始玩！</button>
 </div></div>
 <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="modal-panel">
-  <div class="modal-head"><h2 id="settingsTitle">Make it yours ✨</h2><button class="close-btn" data-close="settingsModal" aria-label="Close">×</button></div>
-  <label class="field-label" for="nameInput">Name your game</label><input class="text-input" id="nameInput" maxlength="22" placeholder="Fruit Pop" />
-  <div class="field-label">Pick a color theme</div><div class="themes"><button type="button" class="theme-btn" data-theme="peach">🍑 Peach</button><button type="button" class="theme-btn" data-theme="mint">🍈 Mint</button><button type="button" class="theme-btn" data-theme="berry">🫐 Berry</button></div>
-  <button class="main-btn modal-cta" id="saveSettings">Save changes</button><p class="small-note">Your settings and best score are stored on this device.</p>
+  <div class="modal-head"><h2 id="settingsTitle">自訂遊戲 ✨</h2><button class="close-btn" data-close="settingsModal" aria-label="關閉">×</button></div>
+  <label class="field-label" for="nameInput">遊戲名稱</label><input class="text-input" id="nameInput" maxlength="22" placeholder="例如：人像合成樂園" />
+  <div class="field-label">選擇顏色主題</div><div class="themes"><button type="button" class="theme-btn" data-theme="peach">🍑 蜜桃粉</button><button type="button" class="theme-btn" data-theme="mint">🍈 薄荷綠</button><button type="button" class="theme-btn" data-theme="berry">🫐 莓果紫</button></div>
+  <button class="main-btn modal-cta" id="saveSettings">儲存設定</button><p class="small-note">你的遊戲設定及本機分數會儲存在這部裝置。</p>
 </div></div>
 <script>
 (() => {
 'use strict';
 const W = 360, H = 520, WALL = 9, FLOOR = 512, DANGER = 92;
 const LEVELS = [
-  {label:'Ball 1',emoji:'🙂',r:15,color:'#f6a6b2',points:1,src:'./balls/ball1.png'},
-  {label:'Ball 2',emoji:'🙂',r:20,color:'#ffc88f',points:3,src:'./balls/ball2.png'},
-  {label:'Ball 3',emoji:'🙂',r:25,color:'#a6d5ff',points:6,src:'./balls/ball3.png'},
-  {label:'Ball 4',emoji:'🙂',r:31,color:'#d8b4ff',points:10,src:'./balls/ball4.png'},
-  {label:'Ball 5',emoji:'🙂',r:38,color:'#b6e5c2',points:15,src:'./balls/ball5.png'},
-  {label:'Ball 6',emoji:'🙂',r:46,color:'#ffd7a8',points:22,src:'./balls/ball6.png'},
-  {label:'Ball 7',emoji:'⭐',r:56,color:'#f3b3c8',points:32,src:'./balls/ball7.png'}
+  {label:'第 1 級人像球',emoji:'🙂',r:15,color:'#f6a6b2',points:1,src:'./balls/ball1.png'},
+  {label:'第 2 級人像球',emoji:'🙂',r:20,color:'#ffc88f',points:3,src:'./balls/ball2.png'},
+  {label:'第 3 級人像球',emoji:'🙂',r:25,color:'#a6d5ff',points:6,src:'./balls/ball3.png'},
+  {label:'第 4 級人像球',emoji:'🙂',r:31,color:'#d8b4ff',points:10,src:'./balls/ball4.png'},
+  {label:'第 5 級人像球',emoji:'🙂',r:38,color:'#b6e5c2',points:15,src:'./balls/ball5.png'},
+  {label:'第 6 級人像球',emoji:'🙂',r:46,color:'#ffd7a8',points:22,src:'./balls/ball6.png'},
+  {label:'第 7 級人像球',emoji:'⭐',r:56,color:'#f3b3c8',points:32,src:'./balls/ball7.png'}
 ];
 const PLAYERS = [
   {id:'ada',name:'Ada'}, {id:'andrew',name:'Andrew'},
@@ -249,15 +249,15 @@ function drawScoreboard(){
 window.addEventListener('fruitpop-cloud-data',e=>{
   cloudRows=Array.isArray(e.detail?.rows)?e.detail.rows:[];
   cloudConnected=true;
-  setCloudStatus('🌐 Live shared scores · All phones');
+  setCloudStatus('🌐 即時共用排行榜 · 所有裝置');
   drawScoreboard();
 });
 window.addEventListener('fruitpop-cloud-status',e=>{
   const state=e.detail?.state;
-  if(state==='online')setCloudStatus('🌐 Connected · Loading shared scores…');
-  else if(state==='setup')setCloudStatus('Local scores · Online leaderboard needs Firebase setup');
-  else if(state==='error')setCloudStatus('Offline scores · Cloud not available; check Firebase setup');
-  else if(state==='upload-error')setCloudStatus('Score saved locally · Cloud upload will retry');
+  if(state==='online')setCloudStatus('🌐 已連線 · 正在載入共用分數…');
+  else if(state==='setup')setCloudStatus('本機分數 · 尚未完成 Firebase 網上排行榜設定');
+  else if(state==='error')setCloudStatus('離線分數 · 無法連接雲端，請檢查 Firebase 設定');
+  else if(state==='upload-error')setCloudStatus('分數已儲存在本機 · 稍後會重試上傳');
 });
 function recordGame(){
   if(!selectedPlayer||recorded)return;
@@ -275,9 +275,9 @@ soundOn=read('fruitpop-sound','on')!=='off';
 function applySettings(){
   const t=THEMES[theme]; for(const [k,v] of Object.entries(t)) if(k!=='guide')document.documentElement.style.setProperty('--'+k,v);
   $('gameName').textContent=gameName;
-  document.title=gameName+' · Fruit Merge';
+  document.title=gameName+'｜人像合成';
   $('soundButton').textContent=soundOn?'♫':'♪';
-  $('soundButton').setAttribute('aria-label',soundOn?'Mute sound':'Unmute sound');
+  $('soundButton').setAttribute('aria-label',soundOn?'靜音':'開啟音效');
   document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===theme));
 }
 applySettings();bestEl.textContent=best.toLocaleString();
@@ -285,14 +285,14 @@ function randTier(){return Math.floor(Math.random()*4);}
 function updateHud(){scoreEl.textContent=score.toLocaleString();bestEl.textContent=Math.max(best,score).toLocaleString();const level=LEVELS[next];nextEl.innerHTML=`<img src=\"${level.src}\" alt=\"${level.label}\">`;}
 function startGame(){
   fruits=[];particles=[];score=0;current=randTier();next=randTier();fruitId=0;lastDrop=-20;dangerTimer=0;gameOver=false;sparkleAt=0;recorded=false;best=selectedPlayer?scoreFor(selectedPlayer).best:0;
-  $('currentPlayerLabel').textContent=selectedPlayer?('Playing: '+PLAYERS.find(p=>p.id===selectedPlayer).name):'Choose a player';
+  $('currentPlayerLabel').textContent=selectedPlayer?('目前玩家：'+PLAYERS.find(p=>p.id===selectedPlayer).name):'請選擇玩家';
   $('gameOverOverlay').classList.remove('visible');pointerX=W/2;updateHud();
 }
 function finishGame(manual=false){
   if(gameOver)return;
   gameOver=true;
   recordGame();
-  $('gameOverHeading').textContent=manual?'Game ended':'Game over!';
+  $('gameOverHeading').textContent=manual?'已結束本局':'遊戲結束！';
   $('finalScore').textContent=score.toLocaleString();
   $('gameOverOverlay').classList.add('visible');
   tone(manual?420:240,manual?.13:.34,'triangle',.045);
@@ -422,7 +422,7 @@ function draw(){
   // The danger line is deliberately visible without obscuring the action.
   ctx.save();ctx.setLineDash([7,7]);ctx.lineWidth=2;ctx.strokeStyle=t.guide;ctx.globalAlpha=.92;
   ctx.beginPath();ctx.moveTo(14,DANGER);ctx.lineTo(W-14,DANGER);ctx.stroke();ctx.restore();
-  ctx.font='bold 10px system-ui';ctx.textAlign='left';ctx.fillStyle=t.deep;ctx.globalAlpha=.68;ctx.fillText('DANGER LINE',16,DANGER-11);ctx.globalAlpha=1;
+  ctx.font='bold 10px system-ui';ctx.textAlign='left';ctx.fillStyle=t.deep;ctx.globalAlpha=.68;ctx.fillText('危險線',16,DANGER-11);ctx.globalAlpha=1;
   // Subtle tray at the bottom.
   ctx.fillStyle='#ffffff60';ctx.fillRect(WALL,FLOOR-8,W-WALL*2,9);
   ctx.fillStyle=t.guide+'83';ctx.fillRect(WALL,FLOOR-3,W-WALL*2,3);
@@ -432,7 +432,7 @@ function draw(){
     ctx.save();ctx.strokeStyle=t.guide;ctx.lineWidth=1.5;ctx.globalAlpha=.55;ctx.setLineDash([4,8]);
     ctx.beginPath();ctx.moveTo(px,67);ctx.lineTo(px,FLOOR);ctx.stroke();ctx.restore();
     renderFruit({level:current,x:px,y:44,r:lvl.r},.96);
-    ctx.fillStyle=t.deep;ctx.globalAlpha=.7;ctx.textAlign='right';ctx.font='bold 11px system-ui';ctx.fillText('DROP ↓',W-18,33);ctx.globalAlpha=1;
+    ctx.fillStyle=t.deep;ctx.globalAlpha=.7;ctx.textAlign='right';ctx.font='bold 11px system-ui';ctx.fillText('放下 ↓',W-18,33);ctx.globalAlpha=1;
   }
   // Circles and mild kinetic motion, no external asset requests.
   for(const f of fruits)renderFruit(f);
@@ -476,7 +476,7 @@ window.addEventListener('keydown',e=>{
 $('soundButton').addEventListener('click',()=>{soundOn=!soundOn;write('fruitpop-sound',soundOn?'on':'off');applySettings();if(soundOn)tone(680,.1);});
 $('restartButton').addEventListener('click',()=>{
   if(gameOver){startGame();return;}
-  if(!score || confirm('Restart this round? Your unfinished score will NOT be saved. Use End Game to submit it.'))startGame();
+  if(!score || confirm('確定重新開始本局？未完成嘅分數將不會儲存。如果想記錄今次成績，請先選擇「結束遊戲並儲存分數」。'))startGame();
 });
 $('endGameButton').addEventListener('click',()=>{
   if(gameOver || !selectedPlayer || anyModalOpen())return;
@@ -497,11 +497,11 @@ $('leaderboardButton').addEventListener('click',showScores);
 $('endLeaderboardButton').addEventListener('click',showScores);
 $('startScoresButton').addEventListener('click',showScores);
 $('switchPlayerButton').addEventListener('click',()=>{
-  if(selectedPlayer&&score>0&&!gameOver&&!confirm('Switch players? Your unfinished score will NOT be saved. Use End Game to submit it.'))return;
+  if(selectedPlayer&&score>0&&!gameOver&&!confirm('確定切換玩家？未完成嘅分數將不會儲存。如果想記錄今次成績，請先選擇「結束遊戲並儲存分數」。'))return;
   // Switching names is not a completed game.
   closeModal('scoreboardModal');chosenPlayer=null;selectedPlayer=null;
   document.querySelectorAll('.player-option').forEach(b=>b.classList.remove('selected'));
-  $('startGameButton').disabled=true;$('startGameButton').textContent='Choose your name';
+  $('startGameButton').disabled=true;$('startGameButton').textContent='請先選擇玩家';
   openModal('startModal');
 });
 for(const p of PLAYERS){
@@ -509,7 +509,7 @@ for(const p of PLAYERS){
   button.addEventListener('click',()=>{
     chosenPlayer=p.id;
     document.querySelectorAll('.player-option').forEach(b=>b.classList.toggle('selected',b===button));
-    $('startGameButton').disabled=false;$('startGameButton').textContent='Play as '+p.name+' ▶';
+    $('startGameButton').disabled=false;$('startGameButton').textContent='以 '+p.name+' 身分開始 ▶';
   });
   $('playerChoices').appendChild(button);
 }
