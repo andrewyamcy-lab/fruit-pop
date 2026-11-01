@@ -109,6 +109,12 @@
   <div class="modal-head"><h2 id="settingsTitle">Make it yours ✨</h2><button class="close-btn" data-close="settingsModal" aria-label="Close">×</button></div>
   <label class="field-label" for="nameInput">Name your game</label><input class="text-input" id="nameInput" maxlength="22" placeholder="Fruit Pop" />
   <div class="field-label">Pick a color theme</div><div class="themes"><button type="button" class="theme-btn" data-theme="peach">🍑 Peach</button><button type="button" class="theme-btn" data-theme="mint">🍈 Mint</button><button type="button" class="theme-btn" data-theme="berry">🫐 Berry</button></div>
+  <label class="field-label" for="level1PhotoInput">Level 1 face photo</label>
+  <input class="text-input" id="level1PhotoInput" type="file" accept="image/*" aria-label="Choose Level 1 face photo">
+  <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+    <img id="level1Preview" alt="Current Level 1 ball" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:3px solid #f6a6b2">
+    <span id="level1PhotoStatus" style="font-size:12px;color:#8d6a7c;line-height:1.4">Choose the replacement photo from your device. It stays on this device.</span>
+  </div>
   <button class="main-btn modal-cta" id="saveSettings">Save changes</button><p class="small-note">Your settings and best score are stored on this device.</p>
 </div></div>
 <script>
@@ -140,6 +146,12 @@ let pointerX=W/2, isDragging=false, gameOver=false, lastDrop=-20, dangerTimer=0,
 let theme='peach', gameName='Fruit Pop', audioCtx=null, lastTime=0, accumulator=0, fruitId=0, sparkleAt=0;
 const read=(key,fall)=>{try{return localStorage.getItem(key)??fall;}catch(_){return fall;}};
 const write=(key,v)=>{try{localStorage.setItem(key,String(v));}catch(_){}};
+const level1Override=read('fruitpop-level1-image','');
+if(level1Override.startsWith('data:image/')) {
+  LEVELS[0].src=level1Override;
+  const storedImg=new Image(); storedImg.src=level1Override; LEVEL_IMAGES[0]=storedImg;
+}
+$('level1Preview').src=LEVELS[0].src;
 best=Math.max(0,Number(read('fruitpop-best','0'))||0);
 theme=THEMES[read('fruitpop-theme','peach')]?read('fruitpop-theme','peach'):'peach';
 gameName=(read('fruitpop-name','Fruit Pop')||'Fruit Pop').slice(0,22);
@@ -347,6 +359,33 @@ document.querySelectorAll('.theme-btn').forEach(b=>b.addEventListener('click',()
   document.querySelectorAll('.theme-btn').forEach(el=>el.classList.remove('active'));
   b.classList.add('active');
 }));
+$('level1PhotoInput').addEventListener('change', event=>{
+  const file=event.target.files?.[0];
+  if(!file || !file.type.startsWith('image/')) return;
+  $('level1PhotoStatus').textContent='Preparing face crop…';
+  const objectUrl=URL.createObjectURL(file);
+  const photo=new Image();
+  photo.onload=()=>{
+    try {
+      const size=Math.min(photo.naturalWidth,photo.naturalHeight)*0.76;
+      const sx=Math.max(0,Math.min(photo.naturalWidth-size,(photo.naturalWidth-size)/2));
+      const sy=Math.max(0,Math.min(photo.naturalHeight-size,photo.naturalHeight*0.44-size/2));
+      const tiny=document.createElement('canvas');tiny.width=256;tiny.height=256;
+      const c=tiny.getContext('2d'); c.drawImage(photo,sx,sy,size,size,0,0,256,256);
+      const data=tiny.toDataURL('image/jpeg',0.87);
+      LEVELS[0].src=data;
+      const face=new Image();face.src=data;LEVEL_IMAGES[0]=face;
+      write('fruitpop-level1-image',data);
+      $('level1Preview').src=data;
+      $('level1PhotoStatus').textContent='Level 1 changed on this device ✓';
+      updateHud();
+    } catch(_) {
+      $('level1PhotoStatus').textContent='Could not process this image. Try JPEG or PNG.';
+    } finally { URL.revokeObjectURL(objectUrl); }
+  };
+  photo.onerror=()=>{URL.revokeObjectURL(objectUrl);$('level1PhotoStatus').textContent='Unable to load this photo.';};
+  photo.src=objectUrl;
+});
 $('saveSettings').addEventListener('click',()=>{
   const newName=$('nameInput').value.trim();gameName=(newName||'Fruit Pop').slice(0,22);
   const selected=document.querySelector('.theme-btn.active');theme=selected?.dataset.theme||'peach';
