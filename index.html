@@ -144,7 +144,7 @@
 'use strict';
 const W = 360, H = 520, WALL = 9, FLOOR = 512, DANGER = 92;
 const LEVELS = [
-  {label:'Ball 1',emoji:'🙂',r:15,color:'#f6a6b2',points:1,src:'./balls/ball1.jpg'},
+  {label:'Ball 1',emoji:'🙂',r:15,color:'#f6a6b2',points:1,src:'./balls/ball1.png'},
   {label:'Ball 2',emoji:'🙂',r:20,color:'#ffc88f',points:3,src:'./balls/ball2.png'},
   {label:'Ball 3',emoji:'🙂',r:25,color:'#a6d5ff',points:6,src:'./balls/ball3.png'},
   {label:'Ball 4',emoji:'🙂',r:31,color:'#d8b4ff',points:10,src:'./balls/ball4.png'},
@@ -154,8 +154,8 @@ const LEVELS = [
 ];
 const PLAYERS = [
   {id:'ada',name:'Ada'}, {id:'andrew',name:'Andrew'},
-  {id:'esther',name:'Esther'}, {id:'rain',name:'Rain'},
-  {id:'tom-1',name:'Tom 1'}, {id:'tom-2',name:'Tom 2'},
+  {id:'esther',name:'Esther'}, {id:'jenny',name:'Jenny'},
+  {id:'rain',name:'Rain'}, {id:'tom',name:'Tom'},
   {id:'yaki',name:'Yaki'}
 ];
 const THEMES = {
@@ -177,6 +177,17 @@ const write=(key,v)=>{try{localStorage.setItem(key,String(v));}catch(_){}};
 let selectedPlayer=null, chosenPlayer=null, recorded=false;
 let scores={};
 try{const old=JSON.parse(read('fruitpop-leaderboard-v1','{}'));if(old&&typeof old==='object'&&!Array.isArray(old))scores=old;}catch(_){}
+// Transfer scores from the accidentally duplicated Tom entries to the single Tom.
+if(scores['tom-1'] || scores['tom-2']){
+  const a=scores['tom-1']||{},b=scores['tom-2']||{},c=scores.tom||{};
+  scores.tom={
+    best:Math.max(0,Number(a.best)||0,Number(b.best)||0,Number(c.best)||0),
+    last:Number(c.last)||Number(b.last)||Number(a.last)||0,
+    games:(Number(a.games)||0)+(Number(b.games)||0)+(Number(c.games)||0)
+  };
+  delete scores['tom-1'];delete scores['tom-2'];
+  write('fruitpop-leaderboard-v1',JSON.stringify(scores));
+}
 const scoreFor=id=>{
   const row=scores[id]||{};
   return {best:Math.max(0,Number(row.best)||0),last:Math.max(0,Number(row.last)||0),games:Math.max(0,Number(row.games)||0)};
