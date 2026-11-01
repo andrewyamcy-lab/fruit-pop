@@ -69,6 +69,15 @@
     .theme-btn.active { border-color:var(--deep); }
     .modal-cta { width:100%; margin-top:20px; }
     .small-note { margin:17px 0 0; font-size:11px !important; color:#b29ea9 !important; text-align:center; }
+    .player-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:18px;}
+    .player-option {border:2px solid #f2d9df;border-radius:14px;padding:12px 8px;background:#fff8f5;color:#613d52;font-size:15px;font-weight:850;}
+    .player-option.selected {background:#ffe6ec;border-color:var(--deep);box-shadow:0 0 0 2px #fff4;}
+    .main-btn:disabled {opacity:.5;cursor:not-allowed;box-shadow:none;}
+    .scoreboard-scroll {max-height:45vh;overflow:auto;}
+    .scoreboard-table {border-collapse:collapse;width:100%;font-size:13px;text-align:left;font-variant-numeric:tabular-nums;}
+    .scoreboard-table th,.scoreboard-table td {padding:11px 5px;border-bottom:1px solid #f3e2e4;}
+    .scoreboard-table th:nth-child(n+3),.scoreboard-table td:nth-child(n+3) {text-align:right;}
+    .scoreboard-table tr.active-player {background:#fff0f3;font-weight:900;}
     @keyframes pop-in { from { transform:scale(.92);opacity:0; } to { transform:scale(1);opacity:1; } }
     @media (max-width:374px) { .app { padding-left:10px; padding-right:10px; gap:9px; } .brand-icon { width:38px; height:38px; flex-basis:38px; } .brand-title { max-width:145px; font-size:21px; } .scorecard { min-height:61px; } .score-num { font-size:24px; } }
     @media (max-height:730px) and (orientation:portrait) { .app { gap:7px; padding-top:max(6px,env(safe-area-inset-top)); } .scorecard { min-height:60px; padding:6px 4px; } .brand-icon { width:36px; height:36px; flex-basis:36px; } .brand-title { font-size:22px; } .brand-sub { display:none; } .board-frame { max-width:calc((100svh - 207px)*360/520 + 10px); align-self:center; } }
@@ -78,8 +87,9 @@
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><div class="brand-icon">🍉</div><div><h1 class="brand-title" id="gameName">Fruit Pop</h1><p class="brand-sub">A juicy little merge game</p></div></div>
+    <div class="brand"><div class="brand-icon">🍉</div><div><h1 class="brand-title" id="gameName">Fruit Pop</h1><p class="brand-sub" id="currentPlayerLabel">Choose a player</p></div></div>
     <div class="actions">
+      <button class="icon-btn" id="leaderboardButton" aria-label="View player scores" title="Leaderboard">🏆</button>
       <button class="icon-btn" id="soundButton" aria-label="Mute sound" title="Toggle sound">♫</button>
       <button class="icon-btn" id="settingsButton" aria-label="Customize game" title="Customize">⚙</button>
       <button class="icon-btn" id="restartButton" aria-label="Restart game" title="Restart">↻</button>
@@ -94,11 +104,29 @@
     <div class="board-inner" id="gameContainer">
       <canvas id="gameCanvas" width="360" height="520" aria-label="Face Merge game. Drag left or right, then release to drop a ball." role="img"></canvas>
       <div class="game-over" id="gameOverOverlay" role="dialog" aria-modal="true" aria-labelledby="gameOverHeading">
-        <div class="end-card"><div class="end-emoji">🍉✨</div><h2 id="gameOverHeading">Nice try!</h2><p>Your juicy score</p><div class="end-score" id="finalScore">0</div><button class="main-btn" id="playAgain">Play again ↻</button></div>
+        <div class="end-card"><div class="end-emoji">🍉✨</div><h2 id="gameOverHeading">Nice try!</h2><p>Your juicy score</p><div class="end-score" id="finalScore">0</div><button class="main-btn" id="playAgain">Play again ↻</button><p><button class="text-btn" id="endLeaderboardButton">🏆 Player scores</button></p></div>
       </div>
     </div>
   </div>
   <div class="foot"><div class="tip"><span class="hint-icon">👆</span><span>Drag to aim · Release to drop</span></div><button class="text-btn" id="helpButton">How to play ?</button></div>
+</div>
+<div class="modal visible" id="startModal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+  <div class="modal-panel">
+    <h2 id="startTitle">Who's playing? 🎮</h2>
+    <p>Choose your name before each game.</p>
+    <div class="player-grid" id="playerChoices"></div>
+    <button class="main-btn modal-cta" id="startGameButton" disabled>Choose your name</button>
+    <button class="text-btn" style="display:block;margin:12px auto 0" id="startScoresButton">🏆 View player scores</button>
+  </div>
+</div>
+<div class="modal" id="scoreboardModal" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
+  <div class="modal-panel">
+    <div class="modal-head"><h2 id="leaderboardTitle">🏆 Player scores</h2><button class="close-btn" data-close="scoreboardModal" aria-label="Close">×</button></div>
+    <p>Best scores ranked from highest to lowest.</p>
+    <div class="scoreboard-scroll"><table class="scoreboard-table"><thead><tr><th>#</th><th>Player</th><th>Best</th><th>Last</th></tr></thead><tbody id="scoreboardRows"></tbody></table></div>
+    <p class="small-note">Scores are saved on this device only. Different iPhones do not share scores.</p>
+    <button class="main-btn modal-cta" id="switchPlayerButton">Choose another player</button>
+  </div>
 </div>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle"><div class="modal-panel">
   <div class="modal-head"><h2 id="helpTitle">How to play 🍒</h2><button class="close-btn" data-close="helpModal" aria-label="Close">×</button></div>
@@ -109,12 +137,6 @@
   <div class="modal-head"><h2 id="settingsTitle">Make it yours ✨</h2><button class="close-btn" data-close="settingsModal" aria-label="Close">×</button></div>
   <label class="field-label" for="nameInput">Name your game</label><input class="text-input" id="nameInput" maxlength="22" placeholder="Fruit Pop" />
   <div class="field-label">Pick a color theme</div><div class="themes"><button type="button" class="theme-btn" data-theme="peach">🍑 Peach</button><button type="button" class="theme-btn" data-theme="mint">🍈 Mint</button><button type="button" class="theme-btn" data-theme="berry">🫐 Berry</button></div>
-  <label class="field-label" for="level1PhotoInput">Level 1 face photo</label>
-  <input class="text-input" id="level1PhotoInput" type="file" accept="image/*" aria-label="Choose Level 1 face photo">
-  <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
-    <img id="level1Preview" alt="Current Level 1 ball" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:3px solid #f6a6b2">
-    <span id="level1PhotoStatus" style="font-size:12px;color:#8d6a7c;line-height:1.4">Choose the replacement photo from your device. It stays on this device.</span>
-  </div>
   <button class="main-btn modal-cta" id="saveSettings">Save changes</button><p class="small-note">Your settings and best score are stored on this device.</p>
 </div></div>
 <script>
@@ -122,13 +144,19 @@
 'use strict';
 const W = 360, H = 520, WALL = 9, FLOOR = 512, DANGER = 92;
 const LEVELS = [
-  {label:'Ball 1',emoji:'🙂',r:15,color:'#f6a6b2',points:1,src:'./balls/ball1.png'},
+  {label:'Ball 1',emoji:'🙂',r:15,color:'#f6a6b2',points:1,src:'./balls/ball1.jpg'},
   {label:'Ball 2',emoji:'🙂',r:20,color:'#ffc88f',points:3,src:'./balls/ball2.png'},
   {label:'Ball 3',emoji:'🙂',r:25,color:'#a6d5ff',points:6,src:'./balls/ball3.png'},
   {label:'Ball 4',emoji:'🙂',r:31,color:'#d8b4ff',points:10,src:'./balls/ball4.png'},
   {label:'Ball 5',emoji:'🙂',r:38,color:'#b6e5c2',points:15,src:'./balls/ball5.png'},
   {label:'Ball 6',emoji:'🙂',r:46,color:'#ffd7a8',points:22,src:'./balls/ball6.png'},
   {label:'Ball 7',emoji:'⭐',r:56,color:'#f3b3c8',points:32,src:'./balls/ball7.png'}
+];
+const PLAYERS = [
+  {id:'ada',name:'Ada'}, {id:'andrew',name:'Andrew'},
+  {id:'esther',name:'Esther'}, {id:'rain',name:'Rain'},
+  {id:'tom-1',name:'Tom 1'}, {id:'tom-2',name:'Tom 2'},
+  {id:'yaki',name:'Yaki'}
 ];
 const THEMES = {
   peach:{page:'#fff5e9',ink:'#452e43',muted:'#9d8190',card:'#fffefa',line:'#f4dedd',primary:'#fc728b',deep:'#df4f78',stage:'#fff7ee',stage2:'#ffe9e7',guide:'#ed9ba1'},
@@ -146,12 +174,24 @@ let pointerX=W/2, isDragging=false, gameOver=false, lastDrop=-20, dangerTimer=0,
 let theme='peach', gameName='Fruit Pop', audioCtx=null, lastTime=0, accumulator=0, fruitId=0, sparkleAt=0;
 const read=(key,fall)=>{try{return localStorage.getItem(key)??fall;}catch(_){return fall;}};
 const write=(key,v)=>{try{localStorage.setItem(key,String(v));}catch(_){}};
-const level1Override=read('fruitpop-level1-image','');
-if(level1Override.startsWith('data:image/')) {
-  LEVELS[0].src=level1Override;
-  const storedImg=new Image(); storedImg.src=level1Override; LEVEL_IMAGES[0]=storedImg;
+let selectedPlayer=null, chosenPlayer=null, recorded=false;
+let scores={};
+try{const old=JSON.parse(read('fruitpop-leaderboard-v1','{}'));if(old&&typeof old==='object'&&!Array.isArray(old))scores=old;}catch(_){}
+const scoreFor=id=>{
+  const row=scores[id]||{};
+  return {best:Math.max(0,Number(row.best)||0),last:Math.max(0,Number(row.last)||0),games:Math.max(0,Number(row.games)||0)};
+};
+const saveScores=()=>write('fruitpop-leaderboard-v1',JSON.stringify(scores));
+function recordGame(){
+  if(!selectedPlayer||recorded)return;
+  recorded=true;
+  if(score>0){const entry=scoreFor(selectedPlayer);entry.best=Math.max(entry.best,score);entry.last=score;entry.games++;scores[selectedPlayer]=entry;saveScores();}
 }
-$('level1Preview').src=LEVELS[0].src;
+function showScores(){
+  const data=PLAYERS.map(p=>({...p,...scoreFor(p.id)})).sort((a,b)=>b.best-a.best||a.name.localeCompare(b.name));
+  $('scoreboardRows').innerHTML=data.map((p,i)=>`<tr class="${p.id===selectedPlayer?'active-player':''}"><td>${i+1}</td><td>${p.name}</td><td>${p.best.toLocaleString()}</td><td>${p.last.toLocaleString()}</td></tr>`).join('');
+  $('scoreboardModal').classList.add('visible');
+}
 best=Math.max(0,Number(read('fruitpop-best','0'))||0);
 theme=THEMES[read('fruitpop-theme','peach')]?read('fruitpop-theme','peach'):'peach';
 gameName=(read('fruitpop-name','Fruit Pop')||'Fruit Pop').slice(0,22);
@@ -166,9 +206,10 @@ function applySettings(){
 }
 applySettings();bestEl.textContent=best.toLocaleString();
 function randTier(){return Math.floor(Math.random()*4);}
-function updateHud(){scoreEl.textContent=score.toLocaleString();bestEl.textContent=best.toLocaleString();const level=LEVELS[next];nextEl.innerHTML=`<img src=\"${level.src}\" alt=\"${level.label}\">`;}
+function updateHud(){scoreEl.textContent=score.toLocaleString();bestEl.textContent=Math.max(best,score).toLocaleString();const level=LEVELS[next];nextEl.innerHTML=`<img src=\"${level.src}\" alt=\"${level.label}\">`;}
 function startGame(){
-  fruits=[];particles=[];score=0;current=randTier();next=randTier();fruitId=0;lastDrop=-20;dangerTimer=0;gameOver=false;sparkleAt=0;
+  fruits=[];particles=[];score=0;current=randTier();next=randTier();fruitId=0;lastDrop=-20;dangerTimer=0;gameOver=false;sparkleAt=0;recorded=false;best=selectedPlayer?scoreFor(selectedPlayer).best:0;
+  $('currentPlayerLabel').textContent=selectedPlayer?('Playing: '+PLAYERS.find(p=>p.id===selectedPlayer).name):'Choose a player';
   $('gameOverOverlay').classList.remove('visible');pointerX=W/2;updateHud();
 }
 function tone(freq=520,duration=.075,type='sine',volume=.06){
@@ -226,7 +267,7 @@ function physics(dt){
             fruits.push(f);
           }
           const earned=LEVELS[l].points*(l===LEVELS.length-1?15:1);
-          score+=earned;if(score>best){best=score;write('fruitpop-best',best);}
+          score+=earned;if(selectedPlayer&&score>best){best=score;const entry=scoreFor(selectedPlayer);entry.best=best;scores[selectedPlayer]=entry;saveScores();}
           emit(mx,my,LEVELS[l].color,l>5?24:14);
           tone(Math.min(1070,430+60*l),.12,'sine',.052);
           if(l>=LEVELS.length-2){sparkleAt=.7;if(navigator.vibrate)navigator.vibrate(30);}
@@ -255,7 +296,7 @@ function physics(dt){
     const crowded=fruits.some(f=>f.age>1.5&&f.y-f.r<DANGER&&Math.abs(f.vy)<110);
     dangerTimer=crowded?dangerTimer+dt:Math.max(0,dangerTimer-dt*2.5);
     if(dangerTimer>1.5){
-      gameOver=true;$('finalScore').textContent=score.toLocaleString();$('gameOverOverlay').classList.add('visible');tone(240,.34,'triangle',.045);
+      gameOver=true;recordGame();$('finalScore').textContent=score.toLocaleString();$('gameOverOverlay').classList.add('visible');tone(240,.34,'triangle',.045);
     }
   }
 }
@@ -347,45 +388,41 @@ window.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='Enter'){e.preventDefault();drop();}
 });
 $('soundButton').addEventListener('click',()=>{soundOn=!soundOn;write('fruitpop-sound',soundOn?'on':'off');applySettings();if(soundOn)tone(680,.1);});
-$('restartButton').addEventListener('click',()=>{if(!score||gameOver||confirm('Start a new game? Your current score will be reset.'))startGame();});
-$('playAgain').addEventListener('click',startGame);
+$('restartButton').addEventListener('click',()=>{if(!score||gameOver||confirm('Start a new game? Your current score will be saved.')){recordGame();startGame();}});
+$('playAgain').addEventListener('click',()=>{recordGame();startGame();});
 function openModal(id){$(id).classList.add('visible');}
 function closeModal(id){$(id).classList.remove('visible');}
 $('helpButton').addEventListener('click',()=>openModal('helpModal'));
+$('leaderboardButton').addEventListener('click',showScores);
+$('endLeaderboardButton').addEventListener('click',showScores);
+$('startScoresButton').addEventListener('click',showScores);
+$('switchPlayerButton').addEventListener('click',()=>{
+  if(selectedPlayer&&score>0&&!gameOver&&!confirm('Save your current score and choose another player?'))return;
+  recordGame();closeModal('scoreboardModal');chosenPlayer=null;
+  document.querySelectorAll('.player-option').forEach(b=>b.classList.remove('selected'));
+  $('startGameButton').disabled=true;$('startGameButton').textContent='Choose your name';
+  openModal('startModal');
+});
+for(const p of PLAYERS){
+  const button=document.createElement('button');button.type='button';button.className='player-option';button.textContent=p.name;
+  button.addEventListener('click',()=>{
+    chosenPlayer=p.id;
+    document.querySelectorAll('.player-option').forEach(b=>b.classList.toggle('selected',b===button));
+    $('startGameButton').disabled=false;$('startGameButton').textContent='Play as '+p.name+' ▶';
+  });
+  $('playerChoices').appendChild(button);
+}
+$('startGameButton').addEventListener('click',()=>{
+  if(!chosenPlayer)return;
+  selectedPlayer=chosenPlayer;closeModal('startModal');startGame();
+});
 $('settingsButton').addEventListener('click',()=>{$('nameInput').value=gameName;applySettings();openModal('settingsModal');});
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
-document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m&&m.id!=='startModal')closeModal(m.id);}));
 document.querySelectorAll('.theme-btn').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.theme-btn').forEach(el=>el.classList.remove('active'));
   b.classList.add('active');
 }));
-$('level1PhotoInput').addEventListener('change', event=>{
-  const file=event.target.files?.[0];
-  if(!file || !file.type.startsWith('image/')) return;
-  $('level1PhotoStatus').textContent='Preparing face crop…';
-  const objectUrl=URL.createObjectURL(file);
-  const photo=new Image();
-  photo.onload=()=>{
-    try {
-      const size=Math.min(photo.naturalWidth,photo.naturalHeight)*0.76;
-      const sx=Math.max(0,Math.min(photo.naturalWidth-size,(photo.naturalWidth-size)/2));
-      const sy=Math.max(0,Math.min(photo.naturalHeight-size,photo.naturalHeight*0.44-size/2));
-      const tiny=document.createElement('canvas');tiny.width=256;tiny.height=256;
-      const c=tiny.getContext('2d'); c.drawImage(photo,sx,sy,size,size,0,0,256,256);
-      const data=tiny.toDataURL('image/jpeg',0.87);
-      LEVELS[0].src=data;
-      const face=new Image();face.src=data;LEVEL_IMAGES[0]=face;
-      write('fruitpop-level1-image',data);
-      $('level1Preview').src=data;
-      $('level1PhotoStatus').textContent='Level 1 changed on this device ✓';
-      updateHud();
-    } catch(_) {
-      $('level1PhotoStatus').textContent='Could not process this image. Try JPEG or PNG.';
-    } finally { URL.revokeObjectURL(objectUrl); }
-  };
-  photo.onerror=()=>{URL.revokeObjectURL(objectUrl);$('level1PhotoStatus').textContent='Unable to load this photo.';};
-  photo.src=objectUrl;
-});
 $('saveSettings').addEventListener('click',()=>{
   const newName=$('nameInput').value.trim();gameName=(newName||'Fruit Pop').slice(0,22);
   const selected=document.querySelector('.theme-btn.active');theme=selected?.dataset.theme||'peach';
@@ -393,7 +430,7 @@ $('saveSettings').addEventListener('click',()=>{
 });
 window.addEventListener('visibilitychange',()=>{lastTime=0;accumulator=0;});
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
-startGame();requestAnimationFrame(frame);
+startGame();openModal('startModal');requestAnimationFrame(frame);
 })();
 </script>
 </body>
