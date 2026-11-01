@@ -112,6 +112,7 @@
       <button class="icon-btn" id="restartButton" aria-label="重新開始遊戲" title="重新開始">↻</button>
     </div>
   </header>
+  <div class="challenge-label" style="font-size:11px;color:var(--muted);text-align:center;font-weight:850;margin:-5px 0 0">🏆 10 級挑戰版 · 人像球加大約 15%</div>
   <div class="scorebar" aria-label="遊戲分數">
     <div class="scorecard"><span class="score-label">目前分數</span><span class="score-num" id="score">0</span></div>
     <div class="scorecard best"><span class="score-label">最高分 ⭐</span><span class="score-num" id="best">0</span></div>
@@ -136,7 +137,7 @@
 <div class="modal visible" id="startModal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
   <div class="modal-panel">
     <h2 id="startTitle">誰要玩？🎮</h2>
-    <p>每次開始前，請選擇你的玩家名稱。</p>
+    <p>每次開始前，請選擇你的玩家名稱。現已升級至 <b>10 級人像球挑戰</b>！</p>
     <div class="player-grid" id="playerChoices"></div>
     <button class="main-btn modal-cta" id="startGameButton" disabled>請先選擇玩家</button>
     <button class="text-btn" style="display:block;margin:12px auto 0" id="startScoresButton">🏆 查看排行榜</button>
@@ -166,7 +167,7 @@
 </div>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle"><div class="modal-panel">
   <div class="modal-head"><h2 id="helpTitle">玩法教學 🎮</h2><button class="close-btn" data-close="helpModal" aria-label="關閉">×</button></div>
-  <ol><li>在遊戲框內<b>左右拖動</b>，選擇人像球嘅掉落位置。</li><li><b>鬆開手指</b>，即可放下人像球。</li><li>當<b>兩個相同嘅人像球</b>碰在一起，就會合成下一級更大嘅人像球。</li><li>唔好畀人像球堆到虛線以上！合成<b>全部七級人像球</b>，挑戰更高分數！</li></ol>
+  <ol><li>在遊戲框內<b>左右拖動</b>，選擇人像球嘅掉落位置。</li><li><b>鬆開手指</b>，即可放下人像球。</li><li>當<b>兩個相同嘅人像球</b>碰在一起，就會合成下一級更大嘅人像球。</li><li>唔好畀人像球堆到虛線以上！合成<b>全部十級人像球</b>，挑戰更高分數！</li></ol>
   <button class="main-btn modal-cta" data-close="helpModal">開始玩！</button>
 </div></div>
 <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="modal-panel">
@@ -180,13 +181,16 @@
 'use strict';
 const W = 360, H = 520, WALL = 9, FLOOR = 512, DANGER = 92;
 const LEVELS = [
-  {label:'第 1 級人像球',emoji:'🙂',r:15,color:'#f6a6b2',points:1,src:'./balls/ball1.png'},
-  {label:'第 2 級人像球',emoji:'🙂',r:20,color:'#ffc88f',points:3,src:'./balls/ball2.png'},
-  {label:'第 3 級人像球',emoji:'🙂',r:25,color:'#a6d5ff',points:6,src:'./balls/ball3.png'},
-  {label:'第 4 級人像球',emoji:'🙂',r:31,color:'#d8b4ff',points:10,src:'./balls/ball4.png'},
-  {label:'第 5 級人像球',emoji:'🙂',r:38,color:'#b6e5c2',points:15,src:'./balls/ball5.png'},
-  {label:'第 6 級人像球',emoji:'🙂',r:46,color:'#ffd7a8',points:22,src:'./balls/ball6.png'},
-  {label:'第 7 級人像球',emoji:'⭐',r:56,color:'#f3b3c8',points:32,src:'./balls/ball7.png'}
+  {label:'第 1 級人像球',emoji:'🙂',r:17,color:'#f6a6b2',points:1,src:'./balls/ball1.png'},
+  {label:'第 2 級人像球',emoji:'🙂',r:23,color:'#ffc88f',points:3,src:'./balls/ball2.png'},
+  {label:'第 3 級人像球',emoji:'🙂',r:29,color:'#a6d5ff',points:6,src:'./balls/ball3.png'},
+  {label:'第 4 級人像球',emoji:'🙂',r:36,color:'#d8b4ff',points:10,src:'./balls/ball4.png'},
+  {label:'第 5 級人像球',emoji:'🙂',r:44,color:'#b6e5c2',points:15,src:'./balls/ball5.png'},
+  {label:'第 6 級人像球',emoji:'🙂',r:53,color:'#ffd7a8',points:22,src:'./balls/ball6.png'},
+  {label:'第 7 級人像球',emoji:'⭐',r:64,color:'#f3b3c8',points:32,src:'./balls/ball7.png'},
+  {label:'第 8 級人像球',emoji:'⭐',r:75,color:'#cbd7fe',points:45,src:'./balls/ball8.jpg'},
+  {label:'第 9 級人像球',emoji:'⭐',r:86,color:'#f9bddc',points:60,src:'./balls/ball9.jpg'},
+  {label:'第 10 級人像球',emoji:'🏆',r:98,color:'#dec3f4',points:80,src:'./balls/ball10.jpg'}
 ];
 const PLAYERS = [
   {id:'ada',name:'Ada'}, {id:'andrew',name:'Andrew'},
