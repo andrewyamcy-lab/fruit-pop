@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /fruitpop_games_v1/{gameId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid','playerId','score','createdAt'])
+        && request.resource.data.keys().hasAll(['uid','playerId','score','createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.playerId in ['ada','andrew','esther','jenny','rain','tom','yaki']
+        && request.resource.data.score is int
+        && request.resource.data.score >= 1
+        && request.resource.data.score <= 10000000
+        && request.resource.data.createdAt == request.time
+        && gameId.matches('^' + request.auth.uid + '_g[a-z0-9-]{1,64}$');
+      allow update, delete: if false;
+    }
+  }
+}

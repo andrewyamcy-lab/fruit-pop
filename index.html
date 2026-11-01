@@ -117,6 +117,7 @@
     <div class="player-grid" id="playerChoices"></div>
     <button class="main-btn modal-cta" id="startGameButton" disabled>Choose your name</button>
     <button class="text-btn" style="display:block;margin:12px auto 0" id="startScoresButton">🏆 View player scores</button>
+    <p class="small-note" id="startCloudStatus">Local scores · Online setup pending</p>
   </div>
 </div>
 <div class="modal" id="scoreboardModal" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
@@ -124,7 +125,7 @@
     <div class="modal-head"><h2 id="leaderboardTitle">🏆 Player scores</h2><button class="close-btn" data-close="scoreboardModal" aria-label="Close">×</button></div>
     <p>Best scores ranked from highest to lowest.</p>
     <div class="scoreboard-scroll"><table class="scoreboard-table"><thead><tr><th>#</th><th>Player</th><th>Best</th><th>Last</th></tr></thead><tbody id="scoreboardRows"></tbody></table></div>
-    <p class="small-note">Scores are saved on this device only. Different iPhones do not share scores.</p>
+    <p class="small-note" id="scoreboardCloudStatus">Local scores only. Online sharing needs Firebase setup.</p>
     <button class="main-btn modal-cta" id="switchPlayerButton">Choose another player</button>
   </div>
 </div>
@@ -193,14 +194,59 @@ const scoreFor=id=>{
   return {best:Math.max(0,Number(row.best)||0),last:Math.max(0,Number(row.last)||0),games:Math.max(0,Number(row.games)||0)};
 };
 const saveScores=()=>write('fruitpop-leaderboard-v1',JSON.stringify(scores));
+let cloudRows=[],cloudConnected=false;
+const cloudStatusEls=()=>[$('startCloudStatus'),$('scoreboardCloudStatus')].filter(Boolean);
+function setCloudStatus(message){
+  cloudStatusEls().forEach(el=>el.textContent=message);
+}
+function queueOnlineScore(playerId,points){
+  const key='fruitpop-pending-games-v1';
+  let queue=[];
+  try{const old=JSON.parse(read(key,'[]'));if(Array.isArray(old))queue=old;}catch(_){}
+  const id='g'+Date.now().toString(36)+Math.random().toString(36).slice(2,11);
+  queue.push({id,playerId,score:Math.floor(points)});
+  write(key,JSON.stringify(queue.slice(-100)));
+  window.dispatchEvent(new Event('fruitpop-cloud-flush'));
+}
+function leaderboardData(){
+  if(!cloudConnected){
+    return PLAYERS.map(p=>({...p,...scoreFor(p.id)}))
+      .sort((a,b)=>b.best-a.best||a.name.localeCompare(b.name));
+  }
+  const totals=new Map(PLAYERS.map(p=>[p.id,{best:0,last:0,games:0,updatedAt:-1}]));
+  for(const item of cloudRows){
+    if(!totals.has(item.playerId))continue;
+    const v=totals.get(item.playerId),s=Math.max(0,Number(item.score)||0);
+    v.best=Math.max(v.best,s);v.games++;
+    if((Number(item.createdAt)||0)>=v.updatedAt){v.last=s;v.updatedAt=Number(item.createdAt)||0;}
+  }
+  return PLAYERS.map(p=>({...p,...totals.get(p.id)}))
+    .sort((a,b)=>b.best-a.best||a.name.localeCompare(b.name));
+}
+function drawScoreboard(){
+  const data=leaderboardData();
+  $('scoreboardRows').innerHTML=data.map((p,i)=>`<tr class="${p.id===selectedPlayer?'active-player':''}"><td>${i+1}</td><td>${p.name}</td><td>${p.best.toLocaleString()}</td><td>${p.last.toLocaleString()}</td></tr>`).join('');
+}
+window.addEventListener('fruitpop-cloud-data',e=>{
+  cloudRows=Array.isArray(e.detail?.rows)?e.detail.rows:[];
+  cloudConnected=true;
+  setCloudStatus('🌐 Live shared scores · All phones');
+  drawScoreboard();
+});
+window.addEventListener('fruitpop-cloud-status',e=>{
+  const state=e.detail?.state;
+  if(state==='online')setCloudStatus('🌐 Connected · Loading shared scores…');
+  else if(state==='setup')setCloudStatus('Local scores · Online leaderboard needs Firebase setup');
+  else if(state==='error')setCloudStatus('Offline scores · Cloud not available; check Firebase setup');
+  else if(state==='upload-error')setCloudStatus('Score saved locally · Cloud upload will retry');
+});
 function recordGame(){
   if(!selectedPlayer||recorded)return;
   recorded=true;
-  if(score>0){const entry=scoreFor(selectedPlayer);entry.best=Math.max(entry.best,score);entry.last=score;entry.games++;scores[selectedPlayer]=entry;saveScores();}
+  if(score>0){const entry=scoreFor(selectedPlayer);entry.best=Math.max(entry.best,score);entry.last=score;entry.games++;scores[selectedPlayer]=entry;saveScores();queueOnlineScore(selectedPlayer,score);}
 }
 function showScores(){
-  const data=PLAYERS.map(p=>({...p,...scoreFor(p.id)})).sort((a,b)=>b.best-a.best||a.name.localeCompare(b.name));
-  $('scoreboardRows').innerHTML=data.map((p,i)=>`<tr class="${p.id===selectedPlayer?'active-player':''}"><td>${i+1}</td><td>${p.name}</td><td>${p.best.toLocaleString()}</td><td>${p.last.toLocaleString()}</td></tr>`).join('');
+  drawScoreboard();
   $('scoreboardModal').classList.add('visible');
 }
 best=Math.max(0,Number(read('fruitpop-best','0'))||0);
@@ -444,5 +490,7 @@ if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceW
 startGame();openModal('startModal');requestAnimationFrame(frame);
 })();
 </script>
+<script src="./firebase-config.js"></script>
+<script type="module" src="./cloud.js"></script>
 </body>
 </html>
