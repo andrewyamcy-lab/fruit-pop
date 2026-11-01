@@ -51,6 +51,12 @@
     .tip { display:flex; align-items:center; gap:7px; color:#b48e9a; font-size:12px; font-weight:800; line-height:1.3; }
     .hint-icon { font-size:17px; }
     .text-btn { background:none; border:0; padding:7px 2px; color:var(--deep); font-weight:900; font-size:12px; white-space:nowrap; }
+    .endgame-btn { border:1px solid #edb6bc; background:#fff8f5; padding:9px 13px; border-radius:12px; color:#b24762; font-size:13px; font-weight:900; white-space:nowrap; }
+    .endgame-btn:active { transform:scale(.98); }
+    .end-choice { display:grid; grid-template-columns:1fr; gap:10px; margin-top:16px; }
+    .end-choice .main-btn { width:100%; }
+    .continue-btn { padding:13px 18px; border-radius:16px; background:#f6edf0; color:#694355; border:1px solid #ebcdd4; font-weight:900; }
+    .end-confirm-score {font-size:34px;font-weight:900;text-align:center;color:var(--deep);margin:0!important;}
     .modal { position:fixed; z-index:10; inset:0; padding:20px; background:#46314285; display:none; align-items:center; justify-content:center; backdrop-filter:blur(5px); }
     .modal.visible { display:flex; }
     .modal-panel { background:#fffefa; border-radius:28px; width:min(100%,380px); padding:24px; box-shadow:0 15px 45px #422a4d36; animation:pop-in .22s ease; }
@@ -109,6 +115,7 @@
     </div>
   </div>
   <div class="foot"><div class="tip"><span class="hint-icon">👆</span><span>Drag to aim · Release to drop</span></div><button class="text-btn" id="helpButton">How to play ?</button></div>
+  <button type="button" class="endgame-btn" id="endGameButton">⏹ End Game &amp; Save Score</button>
 </div>
 <div class="modal visible" id="startModal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
   <div class="modal-panel">
@@ -118,6 +125,18 @@
     <button class="main-btn modal-cta" id="startGameButton" disabled>Choose your name</button>
     <button class="text-btn" style="display:block;margin:12px auto 0" id="startScoresButton">🏆 View player scores</button>
     <p class="small-note" id="startCloudStatus">Local scores · Online setup pending</p>
+  </div>
+</div>
+<div class="modal" id="endConfirmModal" role="dialog" aria-modal="true" aria-labelledby="endConfirmTitle">
+  <div class="modal-panel">
+    <h2 id="endConfirmTitle">End this game?</h2>
+    <p style="text-align:center;margin-bottom:7px">Your current score</p>
+    <p class="end-confirm-score" id="endingScore">0</p>
+    <p style="text-align:center">Choose <b>End &amp; Save Score</b> to finish this round and submit your result to the leaderboard. You cannot resume afterward.</p>
+    <div class="end-choice">
+      <button type="button" class="main-btn" id="confirmEndButton">End &amp; Save Score</button>
+      <button type="button" class="continue-btn" id="continueGameButton">Continue Playing</button>
+    </div>
   </div>
 </div>
 <div class="modal" id="scoreboardModal" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
@@ -269,6 +288,15 @@ function startGame(){
   $('currentPlayerLabel').textContent=selectedPlayer?('Playing: '+PLAYERS.find(p=>p.id===selectedPlayer).name):'Choose a player';
   $('gameOverOverlay').classList.remove('visible');pointerX=W/2;updateHud();
 }
+function finishGame(manual=false){
+  if(gameOver)return;
+  gameOver=true;
+  recordGame();
+  $('gameOverHeading').textContent=manual?'Game ended':'Game over!';
+  $('finalScore').textContent=score.toLocaleString();
+  $('gameOverOverlay').classList.add('visible');
+  tone(manual?420:240,manual?.13:.34,'triangle',.045);
+}
 function tone(freq=520,duration=.075,type='sine',volume=.06){
   if(!soundOn) return;
   try{
@@ -324,7 +352,8 @@ function physics(dt){
             fruits.push(f);
           }
           const earned=LEVELS[l].points*(l===LEVELS.length-1?15:1);
-          score+=earned;if(selectedPlayer&&score>best){best=score;const entry=scoreFor(selectedPlayer);entry.best=best;scores[selectedPlayer]=entry;saveScores();}
+          // Display a provisional score, but only record a new personal best when the round ends.
+          score+=earned;
           emit(mx,my,LEVELS[l].color,l>5?24:14);
           tone(Math.min(1070,430+60*l),.12,'sine',.052);
           if(l>=LEVELS.length-2){sparkleAt=.7;if(navigator.vibrate)navigator.vibrate(30);}
@@ -353,7 +382,7 @@ function physics(dt){
     const crowded=fruits.some(f=>f.age>1.5&&f.y-f.r<DANGER&&Math.abs(f.vy)<110);
     dangerTimer=crowded?dangerTimer+dt:Math.max(0,dangerTimer-dt*2.5);
     if(dangerTimer>1.5){
-      gameOver=true;recordGame();$('finalScore').textContent=score.toLocaleString();$('gameOverOverlay').classList.add('visible');tone(240,.34,'triangle',.045);
+      finishGame(false);
     }
   }
 }
@@ -445,7 +474,21 @@ window.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='Enter'){e.preventDefault();drop();}
 });
 $('soundButton').addEventListener('click',()=>{soundOn=!soundOn;write('fruitpop-sound',soundOn?'on':'off');applySettings();if(soundOn)tone(680,.1);});
-$('restartButton').addEventListener('click',()=>{if(!score||gameOver||confirm('Start a new game? Your current score will be saved.')){recordGame();startGame();}});
+$('restartButton').addEventListener('click',()=>{
+  if(gameOver){startGame();return;}
+  if(!score || confirm('Restart this round? Your unfinished score will NOT be saved. Use End Game to submit it.'))startGame();
+});
+$('endGameButton').addEventListener('click',()=>{
+  if(gameOver || !selectedPlayer || anyModalOpen())return;
+  $('endingScore').textContent=score.toLocaleString();
+  openModal('endConfirmModal');
+});
+$('continueGameButton').addEventListener('click',()=>closeModal('endConfirmModal'));
+$('confirmEndButton').addEventListener('click',()=>{
+  if(!selectedPlayer || gameOver)return;
+  closeModal('endConfirmModal');
+  finishGame(true);
+});
 $('playAgain').addEventListener('click',()=>{recordGame();startGame();});
 function openModal(id){$(id).classList.add('visible');}
 function closeModal(id){$(id).classList.remove('visible');}
@@ -454,8 +497,9 @@ $('leaderboardButton').addEventListener('click',showScores);
 $('endLeaderboardButton').addEventListener('click',showScores);
 $('startScoresButton').addEventListener('click',showScores);
 $('switchPlayerButton').addEventListener('click',()=>{
-  if(selectedPlayer&&score>0&&!gameOver&&!confirm('Save your current score and choose another player?'))return;
-  recordGame();closeModal('scoreboardModal');chosenPlayer=null;
+  if(selectedPlayer&&score>0&&!gameOver&&!confirm('Switch players? Your unfinished score will NOT be saved. Use End Game to submit it.'))return;
+  // Switching names is not a completed game.
+  closeModal('scoreboardModal');chosenPlayer=null;selectedPlayer=null;
   document.querySelectorAll('.player-option').forEach(b=>b.classList.remove('selected'));
   $('startGameButton').disabled=true;$('startGameButton').textContent='Choose your name';
   openModal('startModal');

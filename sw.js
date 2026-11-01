@@ -1,5 +1,5 @@
 /* Offline game support once the site has been opened on HTTPS. */
-const CACHE_NAME='fruit-pop-v4-online-scoreboard';
+const CACHE_NAME='fruit-pop-v5-end-game-confirm';
 const GAME_FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png',
 './balls/ball1.png','./balls/ball2.png','./balls/ball3.png','./balls/ball4.png','./balls/ball5.png','./balls/ball6.png','./balls/ball7.png','./firebase-config.js','./cloud.js'];
 self.addEventListener('install', event=>{
