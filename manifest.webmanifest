@@ -1,0 +1,14 @@
+{
+  "name": "Fruit Pop — Fruit Merge",
+  "short_name": "Fruit Pop",
+  "description": "Drop matching fruits, merge them and make a watermelon.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff5e9",
+  "theme_color": "#fff5e9",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
