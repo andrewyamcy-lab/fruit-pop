@@ -29,6 +29,17 @@
     .icon-btn { width:39px; height:39px; display:grid; place-items:center; border-radius:14px; border:1px solid #f2dfdf; background:#ffffffea; box-shadow:0 3px 9px #8e516817; color:var(--ink); font-size:20px; font-weight:800; }
     .icon-btn:active { transform:scale(.96); }
     .scorebar { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .rival-strip {padding:10px 13px;border:1px solid #f3dedf;border-radius:14px;background:#fffefa;box-shadow:0 4px 12px #ae7d8020;}
+    .rival-row {display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:850;line-height:1.35;}
+    #rivalText {flex:1;min-width:0;overflow-wrap:anywhere;color:var(--ink);}
+    #rivalReference {font-size:10px;color:var(--muted);white-space:nowrap;}
+    .rival-track {width:100%;height:7px;margin-top:8px;border-radius:30px;background:#f5e4e7;overflow:hidden;}
+    .rival-track[hidden] {display:none;}
+    .rival-fill {width:0;height:100%;border-radius:30px;background:linear-gradient(90deg,#ffa3ad,#f16588);transition:width .3s ease;}
+    .combo-toast {position:absolute;z-index:1;pointer-events:none;top:18%;left:50%;width:max-content;max-width:90%;padding:9px 16px 8px;border-radius:16px;background:#fffef5ed;border:2px solid #ffc367;box-shadow:0 7px 22px #d6835470;text-align:center;color:#e96d53;opacity:0;transform:translate(-50%,-9px) scale(.88);transition:opacity .17s ease,transform .17s ease;}
+    .combo-toast.show {opacity:1;transform:translate(-50%,0) scale(1);}
+    .combo-toast strong {display:block;font-size:20px;line-height:1.3;white-space:nowrap;}
+    .combo-toast span {display:block;font-size:12px;font-weight:800;}
     .scorecard { display:flex; flex-direction:column; justify-content:center; text-align:center; min-height:70px; padding:9px 5px; background:var(--card); border:1px solid #f5e4e1; border-radius:17px; box-shadow:0 5px 13px #b58b7822; }
     .score-label { display:block; color:#a28a92; text-transform:uppercase; letter-spacing:1.15px; font-size:10px; font-weight:900; margin-bottom:2px; }
     .score-num { display:block; font-size:27px; letter-spacing:-1px; font-variant-numeric:tabular-nums; line-height:1.16; font-weight:900; }
@@ -86,7 +97,7 @@
     .scoreboard-table tr.active-player {background:#fff0f3;font-weight:900;}
     @keyframes pop-in { from { transform:scale(.92);opacity:0; } to { transform:scale(1);opacity:1; } }
     @media (max-width:374px) { .app { padding-left:10px; padding-right:10px; gap:9px; } .brand-icon { width:38px; height:38px; flex-basis:38px; } .brand-title { max-width:145px; font-size:21px; } .scorecard { min-height:61px; } .score-num { font-size:24px; } }
-    @media (max-height:730px) and (orientation:portrait) { .app { gap:7px; padding-top:max(6px,env(safe-area-inset-top)); } .scorecard { min-height:60px; padding:6px 4px; } .brand-icon { width:36px; height:36px; flex-basis:36px; } .brand-title { font-size:22px; } .brand-sub { display:none; } .board-frame { max-width:calc((100svh - 207px)*360/520 + 10px); align-self:center; } }
+    @media (max-height:900px) and (orientation:portrait) { .app { gap:7px; padding-top:max(6px,env(safe-area-inset-top)); } .scorecard { min-height:60px; padding:6px 4px; } .brand-icon { width:36px; height:36px; flex-basis:36px; } .brand-title { font-size:22px; } .brand-sub { display:none; } .board-frame { max-width:calc((100svh - 267px)*360/520 + 10px); align-self:center; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms!important; transition-duration:.01ms!important; } }
   </style>
 </head>
@@ -106,9 +117,14 @@
     <div class="scorecard best"><span class="score-label">最高分 ⭐</span><span class="score-num" id="best">0</span></div>
     <div class="scorecard"><span class="score-label">下一個球</span><span class="next-fruit" id="nextFruit">🍓</span></div>
   </div>
+  <div class="rival-strip" id="rivalStrip" aria-live="off">
+    <div class="rival-row"><span id="rivalText">🏆 正在連接朋友排行榜…</span><span id="rivalReference"></span></div>
+    <div class="rival-track" id="rivalTrack" hidden><div class="rival-fill" id="rivalFill"></div></div>
+  </div>
   <div class="board-frame">
     <div class="board-inner" id="gameContainer">
       <canvas id="gameCanvas" width="360" height="520" aria-label="人像合成遊戲。左右拖動以瞄準，鬆開手指即可放下人像球。" role="img"></canvas>
+      <div class="combo-toast" id="comboToast" aria-live="off"><strong id="comboText"></strong><span id="comboBonus"></span></div>
       <div class="game-over" id="gameOverOverlay" role="dialog" aria-modal="true" aria-labelledby="gameOverHeading">
         <div class="end-card"><div class="end-emoji">🍉✨</div><h2 id="gameOverHeading">遊戲結束！</h2><p>今次遊戲分數</p><div class="end-score" id="finalScore">0</div><button class="main-btn" id="playAgain">再玩一次 ↻</button><p><button class="text-btn" id="endLeaderboardButton">🏆 玩家排行榜</button></p></div>
       </div>
@@ -191,6 +207,8 @@ canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(
 const scoreEl=$('score'),bestEl=$('best'),nextEl=$('nextFruit');
 let fruits=[], particles=[], score=0, best=0, current=0, next=0;
 let pointerX=W/2, isDragging=false, gameOver=false, lastDrop=-20, dangerTimer=0, soundOn=true;
+let comboCount=0, comboExpiresAt=0, comboShownUntil=0;
+const COMBO_WINDOW_MS=4200;
 let theme='peach', gameName='Fruit Pop', audioCtx=null, lastTime=0, accumulator=0, fruitId=0, sparkleAt=0;
 const read=(key,fall)=>{try{return localStorage.getItem(key)??fall;}catch(_){return fall;}};
 const write=(key,v)=>{try{localStorage.setItem(key,String(v));}catch(_){}};
@@ -246,11 +264,29 @@ function drawScoreboard(){
   const data=leaderboardData();
   $('scoreboardRows').innerHTML=data.map((p,i)=>`<tr class="${p.id===selectedPlayer?'active-player':''}"><td>${i+1}</td><td>${p.name}</td><td>${p.best.toLocaleString()}</td><td>${p.last.toLocaleString()}</td></tr>`).join('');
 }
+function updateRival(){
+  const label=$('rivalText'),reference=$('rivalReference'),track=$('rivalTrack'),fill=$('rivalFill');
+  const explain=(message)=>{
+    label.textContent=message;reference.textContent='';track.hidden=true;fill.style.width='0%';
+  };
+  if(!selectedPlayer){explain('🏆 選擇玩家後，即可挑戰朋友分數');return;}
+  if(!cloudConnected){explain('🏆 正在連接朋友排行榜…');return;}
+  const others=leaderboardData().filter(p=>p.id!==selectedPlayer&&p.best>0);
+  if(!others.length){explain('🏆 暫時未有朋友成績，率先挑戰榜首！');return;}
+  const target=others.filter(p=>p.best>=score).sort((a,b)=>a.best-b.best||a.name.localeCompare(b.name))[0];
+  if(!target){explain('👑 目前領先所有有紀錄嘅朋友！');return;}
+  const pointsToBeat=target.best-score+1;
+  label.textContent='🏆 距離超越 '+target.name+' 仲差 '+pointsToBeat.toLocaleString()+' 分';
+  reference.textContent=target.best.toLocaleString()+' 分';
+  track.hidden=false;
+  fill.style.width=Math.max(0,Math.min(100,score/(target.best+1)*100)).toFixed(2)+'%';
+}
 window.addEventListener('fruitpop-cloud-data',e=>{
   cloudRows=Array.isArray(e.detail?.rows)?e.detail.rows:[];
   cloudConnected=true;
   setCloudStatus('🌐 即時共用排行榜 · 所有裝置');
   drawScoreboard();
+  updateRival();
 });
 window.addEventListener('fruitpop-cloud-status',e=>{
   const state=e.detail?.state;
@@ -282,9 +318,10 @@ function applySettings(){
 }
 applySettings();bestEl.textContent=best.toLocaleString();
 function randTier(){return Math.floor(Math.random()*4);}
-function updateHud(){scoreEl.textContent=score.toLocaleString();bestEl.textContent=Math.max(best,score).toLocaleString();const level=LEVELS[next];nextEl.innerHTML=`<img src=\"${level.src}\" alt=\"${level.label}\">`;}
+function updateHud(){scoreEl.textContent=score.toLocaleString();bestEl.textContent=Math.max(best,score).toLocaleString();const level=LEVELS[next];nextEl.innerHTML=`<img src=\"${level.src}\" alt=\"${level.label}\">`;updateRival();}
 function startGame(){
   fruits=[];particles=[];score=0;current=randTier();next=randTier();fruitId=0;lastDrop=-20;dangerTimer=0;gameOver=false;sparkleAt=0;recorded=false;best=selectedPlayer?scoreFor(selectedPlayer).best:0;
+  comboCount=0;comboExpiresAt=0;comboShownUntil=0;$('comboToast').classList.remove('show');
   $('currentPlayerLabel').textContent=selectedPlayer?('目前玩家：'+PLAYERS.find(p=>p.id===selectedPlayer).name):'請選擇玩家';
   $('gameOverOverlay').classList.remove('visible');pointerX=W/2;updateHud();
 }
@@ -317,12 +354,28 @@ function emit(x,y,color,count=12){
   if(particles.length>190)particles.splice(0,particles.length-190);
 }
 function fruit(level,x,y,vx=0,vy=0){return {id:++fruitId,level,r:LEVELS[level].r,x,y,vx,vy,age:0};}
+function showCombo(count,multiplier,earned){
+  $('comboText').textContent=count+' COMBO! ×'+multiplier.toFixed(1);
+  $('comboBonus').textContent='連續合成！今次 +'+earned.toLocaleString()+' 分';
+  $('comboToast').classList.add('show');
+  comboShownUntil=performance.now()+1500;
+}
+function comboScore(base){
+  if(performance.now()>comboExpiresAt)return base;
+  comboCount++;
+  const multiplier=Math.min(3,1+(comboCount-1)*.5);
+  const earned=Math.round(base*multiplier);
+  if(comboCount>=2)showCombo(comboCount,multiplier,earned);
+  return earned;
+}
 function drop(){
   const time=performance.now()/1000;
   if(gameOver||time-lastDrop<.43||anyModalOpen())return;
   const lvl=LEVELS[current];
   fruits.push(fruit(current,clamp(pointerX,WALL+lvl.r,W-WALL-lvl.r),44,0,8));
   current=next;next=randTier();lastDrop=time;dangerTimer=0;
+  comboCount=0;comboExpiresAt=performance.now()+COMBO_WINDOW_MS;
+  comboShownUntil=0;$('comboToast').classList.remove('show');
   tone(380,.052,'sine',.026);updateHud();
 }
 function anyModalOpen(){return !!document.querySelector('.modal.visible');}
@@ -351,8 +404,9 @@ function physics(dt){
             f.x=clamp(f.x,WALL+f.r,W-WALL-f.r);f.y=Math.min(f.y,FLOOR-f.r);
             fruits.push(f);
           }
-          const earned=LEVELS[l].points*(l===LEVELS.length-1?15:1);
-          // Display a provisional score, but only record a new personal best when the round ends.
+          const basePoints=LEVELS[l].points*(l===LEVELS.length-1?15:1);
+          const earned=comboScore(basePoints);
+          // Scores remain provisional until the player finishes or voluntarily ends.
           score+=earned;
           emit(mx,my,LEVELS[l].color,l>5?24:14);
           tone(Math.min(1070,430+60*l),.12,'sine',.052);
@@ -454,6 +508,9 @@ function frame(ms){
     let steps=0;while(accumulator>=1/60&&steps<4){physics(1/60);accumulator-=1/60;steps++;}
     if(steps===4)accumulator=0;
   } else accumulator=0;
+  if(comboShownUntil&&performance.now()>comboShownUntil){
+    $('comboToast').classList.remove('show');comboShownUntil=0;
+  }
   draw();requestAnimationFrame(frame);
 }
 function position(e){
