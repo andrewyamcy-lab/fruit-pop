@@ -167,7 +167,7 @@
 </div>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle"><div class="modal-panel">
   <div class="modal-head"><h2 id="helpTitle">玩法教學 🎮</h2><button class="close-btn" data-close="helpModal" aria-label="關閉">×</button></div>
-  <ol><li>在遊戲框內<b>左右拖動</b>，選擇人像球嘅掉落位置。</li><li><b>鬆開手指</b>，即可放下人像球。</li><li>當<b>兩個相同嘅人像球</b>碰在一起，就會合成下一級更大嘅人像球。</li><li>唔好畀人像球堆到虛線以上！合成<b>全部十級人像球</b>，挑戰更高分數！</li></ol>
+  <ol><li>在遊戲框內<b>左右拖動</b>，選擇人像球嘅掉落位置。</li><li><b>鬆開手指</b>，即可放下人像球。</li><li>當<b>兩個相同嘅人像球</b>碰在一起，就會合成下一級更大嘅人像球。</li><li>如果已落下嘅人像球持續碰到或超過危險線 <b>1.5 秒</b>，就會遊戲結束。合成<b>全部十級人像球</b>，挑戰更高分數！</li></ol>
   <button class="main-btn modal-cta" data-close="helpModal">開始玩！</button>
 </div></div>
 <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="modal-panel">
@@ -180,6 +180,9 @@
 (() => {
 'use strict';
 const W = 360, H = 520, WALL = 9, FLOOR = 512, DANGER = 92;
+const DANGER_GRACE = 1.5; // Seconds of continuous contact with the overflow line
+const DANGER_SETTLE = 0.85; // Briefly ignore newly dropped or merged balls
+const DANGER_TOLERANCE = 2; // Visibly touching circle edge tolerance, pixels
 const LEVELS = [
   {label:'第 1 級人像球',emoji:'🙂',r:17,color:'#f6a6b2',points:1,src:'./balls/ball1.png'},
   {label:'第 2 級人像球',emoji:'🙂',r:23,color:'#ffc88f',points:3,src:'./balls/ball2.png'},
@@ -377,7 +380,8 @@ function drop(){
   if(gameOver||time-lastDrop<.43||anyModalOpen())return;
   const lvl=LEVELS[current];
   fruits.push(fruit(current,clamp(pointerX,WALL+lvl.r,W-WALL-lvl.r),44,0,8));
-  current=next;next=randTier();lastDrop=time;dangerTimer=0;
+  current=next;next=randTier();lastDrop=time;
+  // A fresh drop must NOT reset the overflow timer for an existing crowded stack.
   comboCount=0;comboExpiresAt=performance.now()+COMBO_WINDOW_MS;
   comboShownUntil=0;$('comboToast').classList.remove('show');
   tone(380,.052,'sine',.026);updateHud();
@@ -435,14 +439,14 @@ function physics(dt){
   }
   for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=200*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
   sparkleAt=Math.max(0,sparkleAt-dt);
-  const time=performance.now()/1000;
-  if(time-lastDrop>1.8){
-    const crowded=fruits.some(f=>f.age>1.5&&f.y-f.r<DANGER&&Math.abs(f.vy)<110);
-    dangerTimer=crowded?dangerTimer+dt:Math.max(0,dangerTimer-dt*2.5);
-    if(dangerTimer>1.5){
-      finishGame(false);
-    }
-  }
+  updateDanger(dt);
+}
+function updateDanger(dt){
+  // Count a settled ball when its outline touches or crosses the line.
+  // Newly spawned or freshly merged balls get a short settling allowance.
+  const overflowing=fruits.some(f=>f.age>=DANGER_SETTLE && f.y-f.r<=DANGER+DANGER_TOLERANCE);
+  dangerTimer=overflowing?Math.min(DANGER_GRACE,dangerTimer+dt):0;
+  if(dangerTimer>=DANGER_GRACE)finishGame(false);
 }
 function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
 function renderFruit(f,alpha=1){
@@ -500,8 +504,11 @@ function draw(){
   }
   if(sparkleAt>0){ctx.save();ctx.globalAlpha=.10*sparkleAt;ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.restore();}
   if(dangerTimer>0){
-    ctx.save();ctx.strokeStyle='#f55d78';ctx.lineWidth=5;ctx.globalAlpha=clamp(dangerTimer/1.5,0,1)*.8;
-    ctx.strokeRect(2,2,W-4,H-4);ctx.restore();
+    ctx.save();ctx.strokeStyle='#f55d78';ctx.lineWidth=5;ctx.globalAlpha=clamp(dangerTimer/DANGER_GRACE,0,1)*.8;
+    ctx.strokeRect(2,2,W-4,H-4);
+    ctx.globalAlpha=.96;ctx.font='bold 13px system-ui';ctx.textAlign='center';
+    ctx.fillStyle='#d13c59';ctx.fillText('⚠️ 觸及危險線！',W/2,DANGER+20);
+    ctx.restore();
   }
 }
 function frame(ms){
