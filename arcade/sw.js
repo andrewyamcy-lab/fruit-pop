@@ -1,4 +1,4 @@
-const CACHE_NAME="friend-arcade-v3-seven-face-fish";
+const CACHE_NAME="friend-arcade-v4-natural-face-fish";
 const FILES=["./","./index.html","./app.js","./cloud.js","./firebase-config.js","./manifest.webmanifest","./icon-192.png","./aquarium/","./aquarium/index.html","./aquarium/app.js","../balls/ball1.png","../balls/ball2.png","../balls/ball3.png","../balls/ball4.png","../balls/ball5.png","../balls/ball6.png","../balls/ball7.png"];
 const OWN=new Set(FILES.map(x=>new URL(x,self.registration.scope).pathname));
 self.addEventListener("install",event=>{

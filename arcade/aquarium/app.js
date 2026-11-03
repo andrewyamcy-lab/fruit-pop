@@ -30,12 +30,17 @@ const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches||
 let paused=reduced, worldW=0,worldH=0,background=null,fish=[],bubbles=[],foods=[],feedCount=0, last=0,elapsed=0,raf=0,active=true;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const START_POSITIONS=[
+  [.16,.26],[.39,.53],[.62,.23],[.84,.48],[.16,.74],[.49,.78],[.80,.76]
+];
 function makeFish(i){
- const size=rand(.027,.034);
- return {faceIndex:i,x:rand(.10,.90),y:rand(.18,.77),vx:rand(-.038,.038)||.025,vy:rand(-.008,.008),
- tx:rand(.12,.88),ty:rand(.17,.77),changeIn:rand(.7,3.3),speed:rand(.022,.055),
- size,palette:palettes[i%palettes.length],phase:rand(0,Math.PI*2),depth:rand(.85,1.08)};
+ const size=rand(.027,.032),anchor=START_POSITIONS[i%FISH_COUNT],facing=i%2===0?1:-1;
+ return {faceIndex:i,x:anchor[0]+rand(-.018,.018),y:anchor[1]+rand(-.018,.018),
+  vx:facing*rand(.025,.037),vy:rand(-.009,.009),facing,tilt:0,
+  tx:rand(.15,.85),ty:rand(.2,.78),changeIn:rand(1.3,3.8),speed:rand(.029,.047),
+  size,palette:palettes[i%palettes.length],phase:rand(0,Math.PI*2),depth:rand(.94,1.07)};
 }
+
 // Fixed collection: exactly one fish for each original Fruit Pop ball (1–7).
 for(let i=0;i<FISH_COUNT;i++)fish.push(makeFish(i));
 $("fishStat").textContent=String(FISH_COUNT);
@@ -92,9 +97,27 @@ function makeBubble(){
  return {x:rand(.04,.96),y:rand(.1,1.05),r:rand(1.2,4),speed:rand(.015,.07),phase:rand(0,6.28)};
 }
 for(let i=0;i<27;i++)bubbles.push(makeBubble());
-function chooseTarget(f){
- f.tx=rand(.09,.91);f.ty=rand(.18,.77);f.changeIn=rand(1.5,4.5);
+function fishSpacing(){
+ // Pixel-based distance keeps similar visual spacing across phone and desktop tanks.
+ return clamp(worldW*.16,70,118);
 }
+function chooseTarget(f){
+ // Give each fish a destination that is not already crowded by its neighbors.
+ let best=null,bestClearance=-Infinity;
+ for(let trial=0;trial<6;trial++){
+   const x=rand(.13,.87),y=rand(.18,.78);
+   let closest=Infinity;
+   for(const other of fish){
+     if(other===f)continue;
+     closest=Math.min(closest,Math.hypot((x-other.x)*worldW,(y-other.y)*worldH));
+   }
+   const clearance=closest+rand(0,26);
+   if(clearance>bestClearance){best={x,y};bestClearance=clearance;}
+ }
+ if(best){f.tx=best.x;f.ty=best.y;}
+ f.changeIn=rand(2.3,5.8);
+}
+
 function addFood(x=.48,y=.12){
  const count=6;
  for(let i=0;i<count;i++)foods.push({x:clamp(x+rand(-.048,.048),.04,.96),y:clamp(y+rand(-.02,.02),.05,.83),vy:rand(.05,.095),life:7+rand(0,3),r:rand(2.3,3.3)});
@@ -103,83 +126,149 @@ function addFood(x=.48,y=.12){
  $("activityText").textContent="🍤 小魚聞到食物啦！睇吓邊條游得最快。";
 }
 function update(dt){
+ // Frame-rate independent movement, gently limited after a background tab resumes.
+ dt=clamp(dt,0,.05);
  elapsed+=dt;
- for(const b of bubbles){b.y-=b.speed*dt;b.x+=Math.sin(elapsed*1.3+b.phase)*.00008;if(b.y<-.03){b.y=1.04;b.x=rand(.03,.97);}}
+ for(const b of bubbles){
+   b.y-=b.speed*dt;b.x+=Math.sin(elapsed*1.3+b.phase)*.00008;
+   if(b.y<-.03){b.y=1.04;b.x=rand(.03,.97);}
+ }
  for(let i=foods.length-1;i>=0;i--){
-  const food=foods[i];food.y=Math.min(.854,food.y+food.vy*dt);food.life-=dt;
-  if(food.life<=0)foods.splice(i,1);
+   const food=foods[i];food.y=Math.min(.854,food.y+food.vy*dt);food.life-=dt;
+   if(food.life<=0)foods.splice(i,1);
  }
+ const spacing=fishSpacing();
  for(const f of fish){
-  f.changeIn-=dt;
-  let target=null,nearest=.22;
-  for(const food of foods){
-   const d=Math.hypot(food.x-f.x,(food.y-f.y)*1.25);
-   if(d<nearest){nearest=d;target=food;}
-  }
-  if(target){
-   f.tx=target.x;f.ty=target.y;
-   if(Math.hypot(target.x-f.x,target.y-f.y)<f.size*.7){
-    const index=foods.indexOf(target);if(index>=0)foods.splice(index,1);chooseTarget(f);
+   f.changeIn-=dt;
+   let targetFood=null,nearest=.24;
+   for(const food of foods){
+     const d=Math.hypot((food.x-f.x)*worldW,(food.y-f.y)*worldH)/Math.max(1,worldW);
+     if(d<nearest){nearest=d;targetFood=food;}
    }
-  }else if(f.changeIn<=0||Math.hypot(f.tx-f.x,f.ty-f.y)<.05)chooseTarget(f);
-  const dx=f.tx-f.x,dy=f.ty-f.y;
-  const angle=Math.atan2(dy,dx),desiredX=Math.cos(angle)*f.speed,desiredY=Math.sin(angle)*f.speed*.75;
-  const smoothing=Math.min(1,dt*(target?2.1:1.2));
-  f.vx+=(desiredX-f.vx)*smoothing;f.vy+=(desiredY-f.vy)*smoothing;
-  f.x+=f.vx*dt;f.y+=f.vy*dt;
-  if(f.x<.055){f.x=.055;f.tx=rand(.35,.9);f.changeIn=3;}
-  if(f.x>.945){f.x=.945;f.tx=rand(.1,.65);f.changeIn=3;}
-  if(f.y<.12){f.y=.12;f.ty=rand(.32,.75);f.changeIn=3;}
-  if(f.y>.82){f.y=.82;f.ty=rand(.2,.63);f.changeIn=3;}
+   if(targetFood){
+     f.tx=targetFood.x;f.ty=targetFood.y;
+     if(Math.hypot((f.tx-f.x)*worldW,(f.ty-f.y)*worldH)<Math.max(9,worldW*f.size*.42)){
+       const index=foods.indexOf(targetFood);
+       if(index>=0)foods.splice(index,1);
+       chooseTarget(f);targetFood=null;
+     }
+   }else if(f.changeIn<=0||Math.hypot((f.tx-f.x)*worldW,(f.ty-f.y)*worldH)<Math.max(18,spacing*.27)){
+     chooseTarget(f);
+   }
+   const dx=(f.tx-f.x)*worldW,dy=(f.ty-f.y)*worldH;
+   const distance=Math.hypot(dx,dy)||1;
+   let desiredX=(dx/distance)*(f.speed*(targetFood?1.12:1));
+   let desiredY=(dy/distance)*(f.speed*worldW/worldH*.66);
+   // Small independent up/down glides feel more like swimming, not straight-line travel.
+   desiredY+=Math.sin(elapsed*.85+f.phase)*.0055;
+   let avoidX=0,avoidY=0;
+   for(const other of fish){
+     if(other===f)continue;
+     let px=(f.x-other.x)*worldW,py=(f.y-other.y)*worldH;
+     let d=Math.hypot(px,py);
+     if(d<.001){
+       const angle=(f.faceIndex*2.4+other.faceIndex)*2.399;
+       px=Math.cos(angle);py=Math.sin(angle);d=1;
+     }
+     if(d>=spacing)continue;
+     const urgency=(spacing-d)/spacing;
+     const weight=urgency*(.75+urgency*1.6)*(targetFood?1.4:1);
+     avoidX+=(px/d)*weight*125/worldW;
+     avoidY+=(py/d)*weight*110/worldH;
+   }
+   // Soft boundaries keep fish visibly inside the tank before they touch glass.
+   const margin=.15;
+   if(f.x<margin)avoidX+=(margin-f.x)*.85;
+   if(f.x>1-margin)avoidX-=(f.x-(1-margin))*.85;
+   if(f.y<.19)avoidY+=(.19-f.y)*.8;
+   if(f.y>.78)avoidY-=(f.y-.78)*.8;
+   desiredX+=avoidX;desiredY+=avoidY;
+   // Cap top speed so avoidance never shoots a fish across the screen.
+   const speed=Math.hypot(desiredX,desiredY*worldH/worldW)||1;
+   const maxSpeed=targetFood?.11:.092;
+   if(speed>maxSpeed){const ratio=maxSpeed/speed;desiredX*=ratio;desiredY*=ratio;}
+   const smooth=1-Math.exp(-dt*(targetFood?2.5:1.75));
+   f.vx+=(desiredX-f.vx)*smooth;
+   f.vy+=(desiredY-f.vy)*smooth;
+   f.x+=f.vx*dt;f.y+=f.vy*dt;
+   f.x=clamp(f.x,.095,.905);f.y=clamp(f.y,.14,.825);
+   // Hysteresis prevents rapid left-right flips while a fish changes direction.
+   if(f.vx>.011)f.facing=1;
+   else if(f.vx<-.011)f.facing=-1;
+   const tiltTarget=clamp(f.vy*worldH/(Math.max(.022,Math.abs(f.vx))*worldW)*.18,-.15,.15);
+   f.tilt+=(tiltTarget-f.tilt)*(1-Math.exp(-dt*2.2));
+ }
+ // Short, small positional corrections prevent permanent portrait-over-portrait stacking.
+ // Individual fish remain moving naturally; no teleportation.
+ for(let pass=0;pass<2;pass++){
+   for(let i=0;i<fish.length;i++)for(let j=i+1;j<fish.length;j++){
+     const a=fish[i],b=fish[j];
+     let dx=(a.x-b.x)*worldW,dy=(a.y-b.y)*worldH;
+     let distance=Math.hypot(dx,dy);
+     if(distance<.001){dx=1;dy=0;distance=1;}
+     const minimum=spacing*.82;
+     if(distance>=minimum)continue;
+     const push=Math.min(3.2,(minimum-distance)*.18);
+     const nx=dx/distance,ny=dy/distance;
+     a.x=clamp(a.x+nx*push/worldW,.095,.905);
+     a.y=clamp(a.y+ny*push/worldH,.14,.825);
+     b.x=clamp(b.x-nx*push/worldW,.095,.905);
+     b.y=clamp(b.y-ny*push/worldH,.14,.825);
+   }
  }
 }
+
 function paintFish(f){
- const x=f.x*worldW,y=f.y*worldH,
-  s=clamp(worldW*.077,25,46)*(f.size/.029)*f.depth,
-  angle=Math.atan2(f.vy*(worldH/worldW),f.vx);
- const [light,dark,highlight]=f.palette,tailSwing=Math.sin(elapsed*9+f.phase)*.27;
- ctx.save();ctx.translate(x,y);ctx.rotate(angle);
- // shadow and tail
- ctx.fillStyle=dark;ctx.beginPath();ctx.moveTo(-s*.78,0);
- ctx.lineTo(-s*(1.65+Math.sin(tailSwing)*.16),-s*(.56+tailSwing));
- ctx.quadraticCurveTo(-s*1.26,0,-s*(1.65+Math.sin(tailSwing)*.16),s*(.56-tailSwing));
+ const x=f.x*worldW,y=(f.y+Math.sin(elapsed*1.35+f.phase)*.002)*worldH;
+ const s=clamp(worldW*.071,25,43)*(f.size/.029)*f.depth;
+ const [light,dark,highlight]=f.palette;
+ const tailSwing=Math.sin(elapsed*9.4+f.phase)*.22;
+ const finSwing=Math.sin(elapsed*5+f.phase)*.13;
+ // Fish body faces its actual horizontal swimming direction.
+ // Facial portraits remain upright regardless of left/right turns.
+ ctx.save();ctx.translate(x,y);ctx.scale(f.facing,1);ctx.rotate(f.tilt*f.facing);
+ ctx.shadowColor="#033d5170";ctx.shadowBlur=s*.16;ctx.shadowOffsetY=s*.12;
+ ctx.fillStyle=dark;ctx.beginPath();
+ ctx.moveTo(-s*.90,0);
+ ctx.lineTo(-s*1.78,-s*(.50+tailSwing));
+ ctx.quadraticCurveTo(-s*1.43,0,-s*1.78,s*(.50-tailSwing));
  ctx.closePath();ctx.fill();
- // dorsal and pectoral fins
- ctx.fillStyle=light;
- ctx.beginPath();ctx.moveTo(-s*.29,-s*.46);ctx.quadraticCurveTo(0,-s*1.13,s*.38,-s*.35);ctx.fill();
- ctx.beginPath();ctx.moveTo(-s*.18,s*.3);ctx.quadraticCurveTo(-s*.65,s*.77,s*.38,s*.45);ctx.fill();
- const g=ctx.createLinearGradient(-s,-s,s,s);
- g.addColorStop(0,highlight);g.addColorStop(.45,light);g.addColorStop(1,dark);
- ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,s*.99,s*.55,0,0,Math.PI*2);ctx.fill();
- ctx.fillStyle="#ffffff50";ctx.beginPath();ctx.ellipse(-s*.05,-s*.2,s*.55,s*.1,-.1,0,Math.PI*2);ctx.fill();
- // spot pattern
- ctx.fillStyle=dark;ctx.globalAlpha=.25;
- for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(-s*(.55-i*.33),0,s*.06,s*.42,0,0,Math.PI*2);ctx.fill();}
+ ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+ ctx.fillStyle=light;ctx.beginPath();
+ ctx.moveTo(-s*.45,-s*.40);ctx.quadraticCurveTo(-s*.10,-s*(1.10+finSwing),s*.48,-s*.49);ctx.fill();
+ ctx.beginPath();
+ ctx.moveTo(-s*.10,s*.26);ctx.quadraticCurveTo(-s*.52,s*(.97-finSwing),s*.34,s*.47);ctx.fill();
+ const gradient=ctx.createLinearGradient(-s,-s*.56,s,s*.65);
+ gradient.addColorStop(0,highlight);gradient.addColorStop(.46,light);gradient.addColorStop(1,dark);
+ ctx.fillStyle=gradient;
+ ctx.beginPath();ctx.ellipse(0,0,s*1.17,s*.67,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#ffffff4b";ctx.beginPath();
+ ctx.ellipse(s*.05,-s*.34,s*.75,s*.12,-.10,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=dark;ctx.globalAlpha=.20;
+ for(let i=0;i<2;i++){ctx.beginPath();ctx.ellipse(-s*(.72-i*.3),0,s*.07,s*.46,0,0,Math.PI*2);ctx.fill();}
  ctx.globalAlpha=1;
- ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(s*.56,-s*.18,Math.max(2,s*.14),0,Math.PI*2);ctx.fill();
- ctx.fillStyle="#203e55";ctx.beginPath();ctx.arc(s*.61,-s*.18,Math.max(1.15,s*.075),0,Math.PI*2);ctx.fill();
- ctx.strokeStyle=dark;ctx.lineWidth=Math.max(.8,s*.04);ctx.beginPath();ctx.arc(s*.68,s*.12,s*.09,.04,1.8);ctx.stroke();
+ // Natural mouth at the nose; the photograph supplies the face and eyes.
+ ctx.strokeStyle=dark;ctx.lineWidth=Math.max(.9,s*.038);ctx.lineCap="round";
+ ctx.beginPath();ctx.arc(s*1.06,s*.12,s*.10,.15,1.65);ctx.stroke();
  ctx.restore();
- // Keep the face upright even when a fish turns left.
- // Clip each original ball photo into a circular portrait over its fish body.
- ctx.save();ctx.translate(x,y);
- const portraitRadius=s*.63;
- ctx.beginPath();ctx.arc(0,0,portraitRadius,0,Math.PI*2);
- ctx.fillStyle=highlight;ctx.fill();
- ctx.save();ctx.clip();
+ // Inset face: thinner tonal border and more visible fins/body (not a large sticker).
+ const faceX=x+f.facing*s*.18,faceY=y-s*.025,r=s*.52;
+ ctx.save();ctx.beginPath();ctx.arc(faceX,faceY,r,0,Math.PI*2);ctx.clip();
  const photo=FACE_IMAGES[f.faceIndex];
- if(photo && photo.complete && photo.naturalWidth>0){
-   ctx.drawImage(photo,-portraitRadius,-portraitRadius,portraitRadius*2,portraitRadius*2);
+ if(photo&&photo.complete&&photo.naturalWidth>0){
+   ctx.drawImage(photo,faceX-r,faceY-r,r*2,r*2);
  }else{
-   ctx.fillStyle="#fffc";ctx.fillRect(-portraitRadius,-portraitRadius,portraitRadius*2,portraitRadius*2);
-   ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="bold "+Math.round(portraitRadius)+"px system-ui";
-   ctx.fillStyle=dark;ctx.fillText(String(f.faceIndex+1),0,0);
+   ctx.fillStyle=highlight;ctx.fillRect(faceX-r,faceY-r,r*2,r*2);
+   ctx.font="bold "+Math.round(r)+"px system-ui";ctx.textAlign="center";
+   ctx.textBaseline="middle";ctx.fillStyle=dark;ctx.fillText(String(f.faceIndex+1),faceX,faceY);
  }
  ctx.restore();
- ctx.lineWidth=Math.max(1.6,s*.095);ctx.strokeStyle="#ffffffed";
- ctx.beginPath();ctx.arc(0,0,portraitRadius,0,Math.PI*2);ctx.stroke();
- ctx.restore();
+ ctx.lineWidth=Math.max(1,s*.045);ctx.strokeStyle=light;
+ ctx.beginPath();ctx.arc(faceX,faceY,r,0,Math.PI*2);ctx.stroke();
+ ctx.lineWidth=Math.max(.8,s*.028);ctx.strokeStyle="#ffffffa6";
+ ctx.beginPath();ctx.arc(faceX,faceY,r-1.5,Math.PI*.98,Math.PI*1.85);ctx.stroke();
 }
+
 function draw(){
  if(!worldW||!worldH||!background)return;
  ctx.drawImage(background,0,0,worldW,worldH);
@@ -232,5 +321,12 @@ window.addEventListener("resize",resize);
 refreshButtons();resize();
 if(reduced){$("activityText").textContent="已按系統減少動態效果設定暫停。按「繼續」可讓小魚游動。";}
 raf=requestAnimationFrame(frame);
-window.__aquariumDebug={getState:()=>({fish:fish.length,faces:fish.map(f=>f.faceIndex+1),imageSources:FACE_SOURCES.slice(),imagesLoaded:FACE_IMAGES.filter(img=>img.complete&&img.naturalWidth>0).length,foods:foods.length,paused,night:settings.night,feedCount,worldW,worldH}),addFood,update,draw,resize,makeFish,stop:()=>cancelAnimationFrame(raf)};
+window.__aquariumDebug={
+ getState:()=>({fish:fish.length,faces:fish.map(f=>f.faceIndex+1),positions:fish.map(f=>({x:f.x,y:f.y,vx:f.vx,vy:f.vy,facing:f.facing,tilt:f.tilt})),spacing:fishSpacing(),
+ imageSources:FACE_SOURCES.slice(),imagesLoaded:FACE_IMAGES.filter(img=>img.complete&&img.naturalWidth>0).length,
+ foods:foods.length,paused,night:settings.night,feedCount,worldW,worldH}),
+ addFood,update,draw,resize,makeFish,
+ setFishPositions:p=>p.forEach((xy,i)=>{if(fish[i]){fish[i].x=xy[0];fish[i].y=xy[1];}}),
+ stop:()=>cancelAnimationFrame(raf)
+};
 })();
