@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eaf7fa">
+<meta name="description" content="Friend Arcade 水族箱：欣賞不同顏色的魚隨機游動、餵魚及探索海底世界。">
+<title>Aquarium｜Friend Arcade 水族箱</title>
+<link rel="icon" type="image/png" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<style>
+:root{color-scheme:light;--ink:#21435a;--sub:#617f91;--line:#d9ebee;--card:#fff;--primary:#118f9f}
+*{box-sizing:border-box}
+html{min-height:100%;background:#eaf7fa}
+body{margin:0;min-height:100svh;font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","PingFang HK",system-ui,sans-serif;background:radial-gradient(ellipse at top left,#d0efff 0,transparent 55%),linear-gradient(#f8fdff,#e7f5f4);color:var(--ink)}
+button,select{font:inherit}button,a{ -webkit-tap-highlight-color:transparent }
+button{cursor:pointer}a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #158eab;outline-offset:3px}
+.container{width:min(1100px,calc(100% - 34px));margin:auto;padding:22px 0 28px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px}
+.back{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #d3e9e7;border-radius:13px;background:#ffffffb5;font-weight:800;font-size:13px}
+.brand{color:#56869a;font-weight:850;font-size:12px;letter-spacing:.4px}
+.hero{text-align:center;margin:7px auto 21px}
+.eyebrow{color:#168d9e;font-size:11px;letter-spacing:2px;font-weight:950;margin-bottom:8px}
+h1{font-size:clamp(30px,5.1vw,49px);margin:0 0 8px;letter-spacing:-1.4px}
+.hero p{color:var(--sub);font-size:14px;line-height:1.7;margin:0}
+.tank-frame{position:relative;border-radius:24px;padding:9px;background:linear-gradient(160deg,#9ad7df,#c6eff0 60%,#86b8c1);box-shadow:0 20px 45px #468c9b33, inset 0 3px 2px #fff7;overflow:hidden}
+.tank-inner{position:relative;overflow:hidden;background:#148aa0;border-radius:17px}
+canvas{display:block;width:100%;height:clamp(325px,53vw,535px);touch-action:manipulation;cursor:crosshair}
+.tank-caption{position:absolute;left:14px;bottom:12px;background:#073d5780;color:#f6ffff;border:1px solid #ffffff4c;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:800;pointer-events:none;backdrop-filter:blur(5px)}
+.tank-caption[hidden]{display:none}
+.tank-bubble{position:absolute;right:12px;top:12px;padding:7px 11px;border-radius:14px;background:#ffffffb8;color:#376477;font-weight:850;font-size:11px;pointer-events:none}
+.controls{display:flex;flex-wrap:wrap;gap:11px;align-items:center;justify-content:center;margin:18px 0 8px}
+.control{background:white;border:1px solid var(--line);color:var(--ink);font-weight:900;font-size:13px;border-radius:13px;padding:12px 17px;min-height:46px;box-shadow:0 5px 12px #4b8d9620}
+.control.primary{background:#158d9d;color:white;border-color:#158d9d}
+.control:active{transform:translateY(1px)}
+.selector{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:9px 11px;font-size:12px;font-weight:850;box-shadow:0 5px 12px #4b8d9620}
+.selector select{border:0;background:transparent;color:inherit;outline-offset:5px;font-weight:850}
+.note{text-align:center;color:var(--sub);font-size:12px;line-height:1.75;margin:15px 10px}
+.stats{display:flex;justify-content:center;gap:20px;color:#407387;font-size:12px;font-weight:800}
+.stats strong{font-size:16px;color:#155969}
+.footer{text-align:center;margin-top:21px;color:#92aeb9;font-size:11px;letter-spacing:1.1px;font-weight:850}
+@media(max-width:620px){.container{width:calc(100% - 20px);padding-top:11px}.topbar{margin-bottom:8px}.brand{font-size:10px}.hero{margin-bottom:14px}.hero p{font-size:12px}.tank-frame{padding:5px;border-radius:18px}.tank-inner{border-radius:14px}canvas{height:clamp(350px,105vw,560px)}.controls{gap:8px}.control{padding:10px 12px;font-size:12px}.selector{padding:8px}.tank-caption{font-size:10px}.note{margin-top:11px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="container">
+<header class="topbar">
+<a class="back" href="../">← 返回遊戲中心</a>
+<span class="brand">🐠 FRIEND ARCADE · AQUARIUM</span>
+</header>
+<section class="hero">
+<div class="eyebrow">YOUR LITTLE UNDERWATER WORLD</div>
+<h1>🐠 我的水族箱</h1>
+<p>睇住小魚自由游動，輕觸水面餵魚，享受一刻寧靜。</p>
+</section>
+<div class="tank-frame"><div class="tank-inner">
+<canvas id="aquarium" role="img" aria-label="動態水族箱，有不同顏色的小魚隨機游動及氣泡。點擊水面可以餵魚。">你的瀏覽器需要支援 Canvas 才能看到水族箱。</canvas>
+<div class="tank-bubble" id="status">🌊 海洋模式</div>
+<div class="tank-caption" id="feedHint">👆 輕觸水面餵魚</div>
+</div></div>
+<div class="controls" aria-label="水族箱控制">
+<button class="control primary" id="feedButton" type="button">🍤 餵魚</button>
+<button class="control" id="pauseButton" type="button" aria-pressed="false">⏸ 暫停</button>
+<button class="control" id="modeButton" type="button" aria-pressed="false">🌙 夜間模式</button>
+<label class="selector" for="fishCount">🐟 魚數量
+<select id="fishCount"><option value="6">6 條</option><option value="10" selected>10 條</option><option value="16">16 條</option></select>
+</label>
+</div>
+<div class="stats"><span>🐟 <strong id="fishStat">10</strong> 條魚</span><span>🍤 已餵食 <strong id="feedStat">0</strong> 次</span></div>
+<p class="note" id="activityText" role="status" aria-live="polite">魚會不斷改變方向，互相穿梭。如果想餵魚，可以輕觸水面或按「餵魚」。</p>
+<footer class="footer">FRIEND ARCADE ✦ LITTLE AQUARIUM</footer>
+</div>
+<script src="./app.js" defer></script>
+</body>
+</html>

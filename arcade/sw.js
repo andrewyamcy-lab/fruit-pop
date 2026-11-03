@@ -1,5 +1,5 @@
-const CACHE_NAME="friend-arcade-v1";
-const FILES=["./","./index.html","./app.js","./cloud.js","./firebase-config.js","./manifest.webmanifest","./icon-192.png"];
+const CACHE_NAME="friend-arcade-v2-aquarium";
+const FILES=["./","./index.html","./app.js","./cloud.js","./firebase-config.js","./manifest.webmanifest","./icon-192.png","./aquarium/","./aquarium/index.html","./aquarium/app.js"];
 const OWN=new Set(FILES.map(x=>new URL(x,self.registration.scope).pathname));
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()));
