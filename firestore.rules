@@ -15,5 +15,92 @@ service cloud.firestore {
         && gameId.matches('^' + request.auth.uid + '_g[a-z0-9-]{1,64}$');
       allow update, delete: if false;
     }
+
+    // Friend Arcade Gatherings: names and availability are publicly readable.
+    function validGatheringPlayer(name) {
+      return name in ['ada','andrew','esther','jenny','rain','tom','yaki'];
+    }
+
+    function validGatheringMonth(month) {
+      return month is string && month.matches('^20[2-9][0-9]-(0[1-9]|1[0-2])$');
+    }
+
+    function validGatheringDays(days) {
+      return days is list
+        && days.size() <= 31
+        && days.toSet().size() == days.size()
+        && days.hasOnly([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]);
+    }
+
+    function sevenPeopleAvailable(id, day) {
+      return true
+        && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(id)/votes/ada).data.days.hasAny([day])
+        && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(id)/votes/andrew).data.days.hasAny([day])
+        && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(id)/votes/esther).data.days.hasAny([day])
+        && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(id)/votes/jenny).data.days.hasAny([day])
+        && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(id)/votes/rain).data.days.hasAny([day])
+        && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(id)/votes/tom).data.days.hasAny([day])
+        && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(id)/votes/yaki).data.days.hasAny([day]);
+    }
+
+    match /friendarcade_gatherings_v1/{gatheringId} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && gatheringId.matches('^[A-Za-z0-9]{20}$')
+        && request.resource.data.keys().hasAll(['title','month','createdBy','creatorUid','createdAt','status','confirmedDay'])
+        && request.resource.data.keys().hasOnly(['title','month','createdBy','creatorUid','createdAt','status','confirmedDay'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 1
+        && request.resource.data.title.size() <= 80
+        && validGatheringMonth(request.resource.data.month)
+        && validGatheringPlayer(request.resource.data.createdBy)
+        && request.resource.data.creatorUid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.status == 'open'
+        && request.resource.data.confirmedDay == 0;
+
+      // Only the creator can confirm a day selected by all seven people.
+      allow update: if request.auth != null
+        && resource.data.creatorUid == request.auth.uid
+        && resource.data.status == 'open'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','confirmedDay'])
+        && request.resource.data.status == 'confirmed'
+        && request.resource.data.confirmedDay is int
+        && request.resource.data.confirmedDay >= 1
+        && request.resource.data.confirmedDay <= 31
+        && sevenPeopleAvailable(gatheringId,request.resource.data.confirmedDay);
+
+      allow delete: if false;
+
+      match /votes/{playerId} {
+        // Public reads allow friends to see the same calendar without a login.
+        allow read: if true;
+
+        allow create: if request.auth != null
+          && validGatheringPlayer(playerId)
+          && request.resource.data.keys().hasAll(['uid','playerId','days','updatedAt'])
+          && request.resource.data.keys().hasOnly(['uid','playerId','days','updatedAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.playerId == playerId
+          && validGatheringDays(request.resource.data.days)
+          && request.resource.data.updatedAt == request.time
+          && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(gatheringId)).data.status == 'open';
+
+        // Only the original anonymous device may update its own named vote.
+        allow update: if request.auth != null
+          && validGatheringPlayer(playerId)
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.playerId == resource.data.playerId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['days','updatedAt'])
+          && validGatheringDays(request.resource.data.days)
+          && request.resource.data.updatedAt == request.time
+          && get(/databases/$(database)/documents/friendarcade_gatherings_v1/$(gatheringId)).data.status == 'open';
+
+        allow delete: if false;
+      }
+    }
+
   }
 }

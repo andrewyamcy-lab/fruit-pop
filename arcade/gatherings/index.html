@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#faf5fc">
+<meta name="apple-mobile-web-app-title" content="Friend Arcade">
+<meta name="description" content="朋友聚會時間表：建立活動，讓七位朋友選擇有空日期，即時找出七人都得閒的日子。">
+<link rel="icon" href="../icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<title>Gatherings｜朋友約聚會 · Friend Arcade</title>
+<style>
+:root{color-scheme:light;--ink:#382c50;--sub:#8b809a;--line:#eee6f1;--purple:#7152b5;--pink:#ed719f;--green:#228560;--soft:#f8f5fb}
+*{box-sizing:border-box}html{background:#faf5fc}body{margin:0;min-height:100svh;color:var(--ink);font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","PingFang HK","Microsoft JhengHei",system-ui,sans-serif;background:radial-gradient(ellipse at 12% 0,#ffe5f0 0,transparent 42%),radial-gradient(ellipse at 91% 11%,#e9e1ff 0,transparent 45%),#faf5fc}
+button,input,a{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #8360c0;outline-offset:3px}[hidden]{display:none!important}
+.shell{width:min(1000px,calc(100% - 32px));margin:auto;padding:21px 0 40px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.back,.player-pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #e8dff0;background:#fff;border-radius:14px;padding:11px 13px;box-shadow:0 6px 18px #4c376011;font-weight:850;font-size:13px}.player-pill{color:#6f4da5}.hero{padding:29px 0 24px}.eyebrow{font-size:11px;color:var(--purple);font-weight:900;letter-spacing:1.6px}.hero h1{font-size:clamp(29px,5vw,45px);letter-spacing:-1.4px;margin:9px 0}.hero p{margin:0;color:var(--sub);line-height:1.7;font-size:14px}
+.grid{display:grid;grid-template-columns:minmax(235px,.82fr) minmax(0,1.6fr);align-items:start;gap:17px}.panel{border:1px solid var(--line);border-radius:23px;background:#fff;box-shadow:0 9px 30px #5d427313;padding:20px;min-width:0}.panel h2{font-size:18px;margin:0 0 7px;letter-spacing:-.4px}.desc{font-size:12px;line-height:1.75;color:var(--sub);margin:0 0 17px}.stack{display:grid;gap:15px}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:12px;font-weight:900;color:#5a4d6e}.field input{border-radius:12px;padding:12px 13px;border:1px solid #ded3e7;width:100%;min-width:0;background:#fff;color:var(--ink);font-size:14px}.primary,.outline,.small{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:13px;padding:12px 15px;font-weight:900;font-size:13px;border:0}.primary{background:linear-gradient(120deg,#8d69c6,#7051b5);color:#fff;box-shadow:0 5px 12px #7751a52d}.outline{background:#f7f1ff;border:1px solid #e9dafa;color:#6946a0}.small{background:#f6f1fa;border:1px solid #ebe4f3;color:#614e80;padding:10px 11px;font-size:12px}.primary:disabled,.outline:disabled,.small:disabled{opacity:.45;cursor:not-allowed}.full{width:100%}.event-list{display:grid;gap:8px;max-height:290px;overflow-y:auto}.event-item{border:1px solid #eee6f4;background:#fdfbff;border-radius:14px;padding:12px;text-align:left;color:var(--ink);display:flex;justify-content:space-between;align-items:center;gap:8px}.event-item.active{border:2px solid #8762c1;background:#f5edff}.event-item b{display:block;font-size:13px;margin-bottom:5px}.event-item span{color:var(--sub);font-size:11px}.event-item .arrow{color:#947ab1}.note{font-size:12px;color:var(--sub);line-height:1.8}.status{display:flex;align-items:center;gap:7px;font-size:12px;margin-bottom:15px;color:#6c5b81}.status i{width:8px;height:8px;background:#e0ac65;border-radius:50%;flex-shrink:0}.status i.online{background:#2da579}.detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.detail-head h2{font-size:24px;margin-bottom:5px}.detail-head p{font-size:12px;color:var(--sub);margin:0}.badge{font-size:11px;font-weight:900;border-radius:999px;background:#f2e8ff;color:#6e4c9c;padding:7px 11px}.badge.confirmed{background:#e2f8ed;color:#267753}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:17px 0}.month-title{font-weight:950;font-size:16px;color:#5a4475;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}.weekday,.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.weekday{text-align:center;margin:0 0 7px;color:#8e829b;font-weight:800;font-size:11px}.day{width:100%;min-height:65px;border:1px solid #eae4ef;border-radius:12px;background:#faf9fc;padding:7px 3px 4px;color:#534967;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative}.day .num{font-size:14px;font-weight:950}.day .cnt{font-size:10px;font-weight:850;color:#8c8498}.day.has-votes{background:#fff0e6;border-color:#f5dec5}.day.good{background:#e5f7ef;border-color:#b4e7cd}.day.good .cnt{color:#23794f}.day.mine{box-shadow:inset 0 0 0 2px #9570cc}.day.inspect{outline:2px solid #5f4497;outline-offset:1px}.day:disabled{opacity:.85;cursor:default}.day.empty{visibility:hidden}.day .tick{position:absolute;top:2px;right:3px;font-size:10px;color:#7554b4}.legend{display:flex;flex-wrap:wrap;gap:13px;font-size:11px;color:#756781;margin:13px 0 4px}.swatch{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:4px;vertical-align:-1px}.legend .s1{background:#e5f7ef}.legend .s2{background:#fff0e6}.legend .s3{border:2px solid #9570cc}.members{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.member{padding:10px 11px;border-radius:11px;background:#faf7fd;border:1px solid #eee8f3;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:5px;font-weight:800}.member small{font-size:10px;font-weight:800;color:#9c8ca8}.member small.done{color:#2d966b}.day-detail{border-radius:15px;background:#f8f3ff;padding:14px;margin-top:14px;display:grid;gap:7px;font-size:12px;line-height:1.7}.day-detail h3{font-size:13px;margin:0}.result{margin-top:17px;border-radius:17px;background:#eefaf2;border:1px solid #d0efd9;padding:16px}.result h3{margin:0 0 9px;font-size:15px;color:#286e4b}.result p{margin:5px 0;font-size:12px;color:#477b61;line-height:1.8}.result .date-btn{background:#fff;border:1px solid #b7e5c8;border-radius:10px;padding:9px;color:#266c49;font-size:12px;font-weight:900;margin:4px 4px 4px 0}.result.pending{background:#fff8ed;border-color:#f5e2be}.result.pending h3{color:#946120}.result.pending p{color:#856d48}.warning{margin:14px 0;border:1px solid #e9d3a9;border-radius:12px;background:#fff9ed;padding:12px;color:#896026;font-size:12px;line-height:1.7}.editing{border-top:1px solid #f1eaf5;margin-top:18px;padding-top:16px}.editing p{font-size:12px;line-height:1.7;color:var(--sub);margin:8px 0}.save-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.footer{text-align:center;color:#afa0ba;font-size:11px;margin:25px 0}.overlay{position:fixed;inset:0;background:#2d203ab0;display:grid;place-items:center;padding:17px;z-index:99}.dialog{max-width:420px;width:100%;border-radius:23px;padding:23px;background:#fff;box-shadow:0 22px 60px #21142c50}.dialog h2{margin:0 0 8px;font-size:20px}.dialog p{font-size:12px;color:var(--sub);line-height:1.7}.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:16px 0}.choices button{border-radius:12px;border:2px solid #ede2f4;background:#fcf9ff;color:#56426f;font-size:13px;font-weight:900;padding:13px}.choices button.chosen{background:#eee5ff;border-color:#8861bb}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#392d52;color:#fff;border-radius:13px;padding:11px 16px;z-index:150;box-shadow:0 7px 24px #31204a40;max-width:calc(100% - 24px);font-size:13px;line-height:1.5;pointer-events:none}
+@media(max-width:750px){.grid{grid-template-columns:1fr}.shell{width:calc(100% - 22px);padding-top:12px}.hero{padding:18px 3px 20px}.panel{padding:16px}.event-list{max-height:220px}.day{min-height:58px;gap:3px;border-radius:10px;padding:7px 2px 4px}.day .num{font-size:13px}.day .cnt{font-size:9px}.weekday,.days{gap:4px}.detail-head h2{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="top"><a class="back" href="../">← 返回 Friend Arcade</a><button type="button" class="player-pill" id="playerButton">👤 <span id="playerLabel">選擇玩家</span> ⌄</button></header>
+<section class="hero"><div class="eyebrow">FRIEND ARCADE · GATHERINGS</div><h1>📅 朋友約聚會</h1><p>唔使逐個問得唔得閒！選擇日期、提交答案，立即睇到七人共同空檔。</p></section>
+<div class="status"><i id="connectionDot"></i><span id="connectionText">正在連接 Firebase…</span></div>
+<div class="grid">
+<div class="stack">
+<section class="panel"><h2>✨ 建立新聚會</h2><p class="desc">任何一位朋友都可以發起新聚會，只需輸入名稱同月份。</p>
+<form id="createForm">
+<div class="field"><label for="eventTitle">聚會名稱</label><input id="eventTitle" type="text" maxlength="80" placeholder="例如：聖誕節聚餐 🎄" required autocomplete="off"></div>
+<div class="field"><label for="eventMonth">選擇月份</label><input id="eventMonth" type="month" required></div>
+<button type="submit" class="primary full" id="createButton" disabled>＋ 建立聚會</button></form>
+</section>
+<section class="panel"><h2>🗓️ 聚會清單</h2><p class="desc">選擇一個聚會，查看日期同其他朋友嘅投票。</p><div id="eventList" class="event-list"><p class="note">正在讀取聚會…</p></div></section>
+<section class="panel"><h2>👥 七位朋友</h2><div class="members" id="members"><p class="note">選擇聚會後顯示提交進度。</p></div><p class="note" style="margin:12px 0 0">同一個名字喺一個聚會只會有一份記錄。修改已提交日期需使用原本裝置／瀏覽器。</p></section>
+</div>
+<div>
+<section class="panel" id="emptyState"><h2>👋 開始安排聚會</h2><p class="desc">建立新聚會或者從左邊揀一個，之後就可以喺日曆直接點擊有空日期。</p></section>
+<section class="panel" id="eventPanel" hidden>
+<div class="detail-head"><div><h2 id="selectedTitle">聚會名稱</h2><p id="selectedMeta"></p></div><span class="badge" id="eventStatus">進行中</span></div>
+<div class="actions"><button type="button" class="outline" id="shareButton">🔗 分享聚會連結</button><button type="button" class="small" id="switchEventButton">↩ 聚會清單</button></div>
+<div class="month-title"><span id="calendarTitle"></span><span class="badge" id="submittedCount">0 / 7 已提交</span></div>
+<div class="weekday"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+<div class="days" id="calendarDays" aria-label="選擇有空日期日曆"></div>
+<div class="legend"><span><i class="swatch s1"></i>7/7 全員得閒</span><span><i class="swatch s2"></i>部分人得閒</span><span><i class="swatch s3"></i>我已選擇</span></div>
+<div class="day-detail" id="dayDetail"><h3>📆 日期詳情</h3><span>按日曆任何一日，即可查看邊個得閒。</span></div>
+<div class="editing"><div class="save-line"><strong id="editHeading">✍️ 我的可出席日期</strong><button type="button" class="primary" id="saveVote" disabled>提交空閒日期</button></div><p id="editHint">按日曆上你有空嘅日期，再按提交。可以一日都唔揀，表示成個月都唔得閒。</p></div>
+<div id="results" class="result pending"></div>
+<div id="confirmArea" hidden style="margin-top:13px"><p class="note">只有發起人可以確認七個人都得閒嘅日期。</p><div id="confirmChoices"></div></div>
+</section>
+</div>
+</div>
+<footer class="footer">FRIEND ARCADE ✦ GATHERINGS · 七位朋友一齊約時間</footer>
+</div>
+<div class="overlay" id="playerOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="nameTitle"><div class="dialog">
+<h2 id="nameTitle">你係邊位？👋</h2><p>選擇玩家名稱就可以投票，毋須帳號密碼。提交之後，建議用同一部裝置修改。</p><div class="choices" id="playerChoices"></div><button class="outline full" type="button" id="closePlayer">關閉</button>
+</div></div>
+<div class="toast" id="toast" hidden role="status"></div>
+<script src="../firebase-config.js"></script>
+<script src="./core.js"></script>
+<script src="./app.js" defer></script>
+</body></html>
