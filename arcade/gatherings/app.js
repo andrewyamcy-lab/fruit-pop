@@ -95,7 +95,7 @@ function renderList(){
 function activate(id){
  const event=state.events.find(v=>v.id===id);
  if(!event){toast("找唔到呢個聚會，可能尚未同步或已移除。");return;}
- const changed=state.currentId!==id;
+ const changed=state.currentId!==id || state.event?.id!==id || !state.stopVotes;
  state.currentId=id;state.event=event;syncHistory(id);
  if(changed){
   state.votes=new Map();state.draft=new Set();state.dirty=false;state.inspectedDay=0;
@@ -292,7 +292,8 @@ async function createGathering(event){
    status:"open",confirmedDay:0
   });
   $("eventTitle").value="";
-  state.currentId=ref.id;syncHistory(ref.id);
+  if(state.events.some(item=>item.id===ref.id))activate(ref.id);
+  else{state.currentId=ref.id;syncHistory(ref.id);}
   toast("✅ 已建立聚會！可以分享連結俾其他朋友。");
  }catch(err){editMessage(err,"建立聚會失敗，請檢查連線。");}
  finally{state.busy=false;$("createButton").disabled=!state.ready;}
