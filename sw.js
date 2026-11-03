@@ -1,12 +1,12 @@
 /* Offline game support once the site has been opened on HTTPS. */
-const CACHE_NAME='fruit-pop-v9-danger-line-fix';
+const CACHE_NAME='fruit-pop-v10-safe-cache';
 const GAME_FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png',
 './balls/ball1.png','./balls/ball2.png','./balls/ball3.png','./balls/ball4.png','./balls/ball5.png','./balls/ball6.png','./balls/ball7.png','./balls/ball8.jpg','./balls/ball9.jpg','./balls/ball10.jpg','./firebase-config.js','./cloud.js'];
 self.addEventListener('install', event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(GAME_FILES)).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate', event=>{
-  event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))),self.clients.claim()]));
+  event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('fruit-pop-')&&key!==CACHE_NAME).map(key=>caches.delete(key)))),self.clients.claim()]));
 });
 self.addEventListener('fetch', event=>{
   if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;

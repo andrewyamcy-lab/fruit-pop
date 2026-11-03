@@ -20,6 +20,19 @@ if(config?.apiKey && config?.projectId && config?.appId){
       console.warn("Shared score feed unavailable",error);
       window.dispatchEvent(new Event("arcade-cloud-error"));
     });
+    // Read public gathering summaries for the home dashboard.
+    // Never download vote records, private IDs, or edit any gathering here.
+    dbSDK.onSnapshot(dbSDK.collection(db,"friendarcade_gatherings_v1"),snapshot=>{
+      const events=snapshot.docs.map(doc=>{
+        const r=doc.data();
+        return {id:doc.id,title:r.title,month:r.month,status:r.status,
+          confirmedDay:r.confirmedDay,createdAt:r.createdAt?.toMillis?.()||0};
+      });
+      window.dispatchEvent(new CustomEvent("arcade-cloud-gatherings",{detail:{events}}));
+    },error=>{
+      console.warn("Gathering summaries unavailable",error);
+      window.dispatchEvent(new Event("arcade-cloud-gatherings-error"));
+    });
   })().catch(error=>{
     console.warn("Firebase failed",error);
     window.dispatchEvent(new Event("arcade-cloud-error"));

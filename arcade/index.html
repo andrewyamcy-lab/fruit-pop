@@ -102,6 +102,55 @@ h1,h2,h3,p{margin:0}
 @media(max-width:720px){.shell{width:min(100% - 28px,540px)}.topbar{padding:15px 0 16px}.logo{width:42px;height:42px}.brand-text strong{font-size:17px}.player-pill{padding:8px 10px;font-size:11px}.hero{grid-template-columns:1fr;min-height:0}.hero-copy{padding:26px 23px 19px}.hero h1{font-size:32px}.hero-art{min-height:118px}.b1{width:74px;height:74px;font-size:34px;left:24%;bottom:11px}.b2{width:104px;height:104px;font-size:43px;right:25%;top:0}.b3{width:61px;height:61px;font-size:27px;right:10%;bottom:0}.stat-grid{gap:8px;margin:13px 0 22px}.stat{padding:12px}.stat b{font-size:21px}.stat span{font-size:10px}.games{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.game-card{padding:10px;border-radius:18px}.game-visual{height:104px}.game-card p{min-height:54px}.two-col{grid-template-columns:1fr}.headline h2{font-size:19px}.panel{padding:16px}}
 @media(max-width:350px){.bottom-nav button{padding:6px}.game-card h3{font-size:14px}.game-card p{font-size:11px}.brand-text small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Friend Arcade 2.0 – live friends' home dashboard */
+.hero{grid-template-columns:minmax(0,1.1fr) minmax(250px,.9fr);background:linear-gradient(130deg,#302846,#57427c 58%,#8668a7)}
+.hero-copy{padding:34px 32px 35px}
+.hero h1{max-width:440px;font-size:clamp(31px,4.2vw,45px)}
+.hero p{max-width:445px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hero-primary{box-shadow:0 5px 0 #e97399}
+.hero-secondary{border:1px solid #ffffff6b;background:#ffffff1c;color:#fff;border-radius:15px;padding:13px 17px;font-weight:900;min-height:46px}
+.hero-feature{align-self:stretch;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:10px;padding:28px 27px;background:linear-gradient(148deg,#ffffff14,#c9a0e72e);border-left:1px solid #ffffff26;position:relative}
+.hero-feature::after{content:"✧";position:absolute;right:20px;top:13px;color:#ffe9ff70;font-size:75px;pointer-events:none}
+.feature-eyebrow{font-size:11px;letter-spacing:1.5px;color:#ffd9ef;font-weight:900;z-index:1}
+.feature-icon{font-size:32px;line-height:1;z-index:1}
+.hero-feature h2{font-size:22px;font-weight:950;color:#fff;line-height:1.3;max-width:260px;z-index:1}
+.hero-feature p{font-size:13px;line-height:1.6;color:#f6e6fd;margin:0;z-index:1}
+.hero-feature a{border-radius:12px;background:#fff;color:#5b438a;font-size:12px;font-weight:900;padding:10px 13px;display:inline-flex;margin-top:4px;z-index:1}
+.stat-grid{margin-bottom:18px}
+.dashboard-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;margin:0 0 26px}
+.home-dashboard-panel{padding:19px;min-height:235px}
+.dashboard-heading{display:flex;justify-content:space-between;align-items:center;gap:9px;margin-bottom:7px}
+.dashboard-heading h2{font-size:18px;font-weight:950;margin:4px 0}
+.dashboard-heading .eyebrow{font-size:9px;letter-spacing:1.2px}
+.dashboard-heading .mini-link{white-space:nowrap}
+.dashboard-subtitle{font-size:11px;color:#8c809d;line-height:1.65;margin:0 0 13px}
+.upcoming-list,.activity-list{display:grid;gap:8px}
+.home-event,.activity-entry{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:15px;background:#faf8fe;border:1px solid #eee9f4;min-height:63px}
+.home-event{text-decoration:none}
+.home-event:focus-visible{outline:3px solid #9378c5}
+.home-event .event-icon,.activity-entry .activity-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#f0e3ff;font-size:19px;flex:0 0 38px}
+.home-event.confirmed .event-icon{background:#dff7ed}
+.home-event .event-copy,.activity-entry .activity-copy{min-width:0;flex:1}
+.home-event strong,.activity-entry strong{display:block;font-size:12px;font-weight:950;line-height:1.5;overflow-wrap:anywhere}
+.home-event small,.activity-entry small{display:block;font-size:10px;color:#8c819a;margin-top:3px;line-height:1.45}
+.home-event .chevron{font-size:17px;color:#9482b2}
+.dashboard-empty{background:#faf8fe;border:1px dashed #e8e0f0;border-radius:14px;padding:14px;font-size:12px;line-height:1.7;color:#827491}
+.dashboard-empty a{display:inline-block;margin-top:7px;color:#6d4cae;font-weight:900;text-decoration:underline;text-underline-offset:2px}
+@media(max-width:720px){
+ .hero{grid-template-columns:1fr}
+ .hero-copy{padding:26px 23px}
+ .hero h1{font-size:32px}
+ .hero-feature{border-left:0;border-top:1px solid #ffffff29;padding:20px 23px;min-height:152px}
+ .feature-icon{position:absolute;right:26px;bottom:23px;font-size:42px;opacity:.72}
+ .hero-feature h2{max-width:calc(100% - 50px);font-size:19px}
+ .hero-feature p{max-width:calc(100% - 48px)}
+ .dashboard-grid{grid-template-columns:1fr;gap:12px}
+ .home-dashboard-panel{min-height:0}
+}
+@media(max-width:350px){.hero-actions{display:grid;grid-template-columns:1fr}.hero-secondary,.hero-primary{justify-content:center}}
+
 </style>
 </head>
 <body>
@@ -112,8 +161,41 @@ h1,h2,h3,p{margin:0}
 </header>
 <main>
 <section class="view" id="view-home" data-view="home">
-<div class="hero"><div class="hero-copy"><span class="eyebrow">YOUR FRIENDS. YOUR GAMES.</span><h1 id="welcome">準備好挑戰朋友未？</h1><p>七個朋友，一個遊戲中心。玩你最鍾意嘅遊戲，一齊爭奪排行榜第一名！</p><button class="primary" type="button" data-launch="fruit-pop">🍉 開始玩 Fruit Pop <span aria-hidden="true">→</span></button></div><div class="hero-art" aria-hidden="true"><span class="bubble b1">🎯</span><span class="bubble b2">🍉</span><span class="bubble b3">🏆</span><span class="spark s1">✦</span><span class="spark s2">✧</span></div></div>
-<div class="stat-grid"><div class="stat"><b>7</b><span>朋友玩家</span></div><div class="stat"><b>1</b><span>已推出遊戲</span></div><div class="stat"><b id="yourBest">—</b><span>你的 Fruit Pop 最高分</span></div></div>
+<div class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">SEVEN FRIENDS · ONE HOME</span>
+    <h1 id="welcome">七個朋友，一個共同基地。</h1>
+    <p>約聚會、玩小遊戲、睇朋友排名，一個地方搞掂。下一次見面，由呢度開始。</p>
+    <div class="hero-actions">
+      <a class="primary hero-primary" href="./gatherings/">📅 安排聚會 <span aria-hidden="true">→</span></a>
+      <button class="hero-secondary" type="button" data-launch="fruit-pop">🍉 玩 Fruit Pop</button>
+    </div>
+  </div>
+  <div class="hero-feature">
+    <span class="feature-eyebrow">✦ NEXT GATHERING</span>
+    <span class="feature-icon" aria-hidden="true">📅</span>
+    <h2 id="heroGatheringTitle">下一次聚會，由你哋決定！</h2>
+    <p id="heroGatheringDate">正在查看有冇已確認嘅聚會…</p>
+    <a id="heroGatheringLink" href="./gatherings/">查看聚會日曆 →</a>
+  </div>
+</div>
+<div class="stat-grid">
+ <div class="stat"><b>7</b><span>固定朋友玩家</span></div>
+ <div class="stat"><b>4</b><span>已推出遊戲與功能</span></div>
+ <div class="stat"><b id="yourBest">—</b><span>你的 Fruit Pop 最高分</span></div>
+</div>
+<div class="dashboard-grid">
+ <section class="panel home-dashboard-panel" aria-labelledby="gatheringsHeading">
+   <div class="dashboard-heading"><div><span class="eyebrow">OUR PLANS</span><h2 id="gatheringsHeading">📅 聚會日程</h2></div><a class="mini-link" href="./gatherings/">管理聚會 →</a></div>
+   <p class="dashboard-subtitle" id="gatheringsStatus" aria-live="polite">正在同步聚會資料…</p>
+   <div class="upcoming-list" id="upcomingGatherings"><p class="dashboard-empty">正在讀取聚會…</p></div>
+ </section>
+ <section class="panel home-dashboard-panel" aria-labelledby="activityHeading">
+   <div class="dashboard-heading"><div><span class="eyebrow">FRIENDS' ACTIVITY</span><h2 id="activityHeading">✨ 朋友近況</h2></div><button class="mini-link" type="button" data-switch="leaderboard">睇排行榜 →</button></div>
+   <p class="dashboard-subtitle">由已記錄嘅遊戲成績同聚會資料整理，唔會顯示虛構動態。</p>
+   <div class="activity-list" id="activityFeed" aria-live="polite"><p class="dashboard-empty">正在讀取最新紀錄…</p></div>
+ </section>
+</div>
 <div class="headline"><h2>🎮 遊戲與功能</h2><button class="mini-link" type="button" data-switch="games">全部遊戲 →</button></div>
 <div class="games">
 <article class="game-card"><div class="game-visual visual-fruit" aria-hidden="true">🍉</div><span class="tag live">現正開放</span><h3>Fruit Pop</h3><p>10 級人像合成遊戲，連擊得分、挑戰朋友紀錄。</p><button class="game-btn" data-launch="fruit-pop">立即挑戰 →</button></article>
@@ -148,7 +230,7 @@ h1,h2,h3,p{margin:0}
 <div class="panel"><h3>👤 玩家身份</h3><p id="identityDescription">你可以喺呢部裝置揀一位玩家，進入 Fruit Pop 時自動沿用相同名稱。</p><div class="settings-actions"><button type="button" class="secondary" id="changePlayer">選擇／切換玩家</button><button type="button" class="secondary" id="refreshScores">重新載入排行榜</button></div></div>
 <div class="headline"><h2>✨ 將來可以加入</h2></div>
 <div class="feature-list"><div class="future">📅 <b>每日挑戰</b><span>七位朋友用同一個每日題目互相比拼。</span></div><div class="future">🎖️ <b>成就紀錄</b><span>記錄每款遊戲嘅解鎖成就。</span></div><div class="future">📊 <b>個人戰績</b><span>集中睇自己各款遊戲嘅最高分。</span></div><div class="future">🗳️ <b>朋友投票</b><span>之後可以擴充到遊戲以外嘅功能。</span></div></div>
-<div class="notice">🛠️ <span>Friend Arcade v1.0 · 繁體中文 · 遊戲及分數以 Firebase 為資料來源，未有推出嘅功能會清楚標示。</span></div>
+<div class="notice">🛠️ <span>Friend Arcade v2.0 · 繁體中文 · 遊戲及分數以 Firebase 為資料來源，未有推出嘅功能會清楚標示。</span></div>
 </section>
 </main>
 <div class="footnote">MADE FOR FRIENDS ✦ FRIEND ARCADE</div>
