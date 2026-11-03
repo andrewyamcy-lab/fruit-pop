@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f9f0e0">
+<meta name="description" content="Friend Arcade 港式打小人：自訂小人紙名稱，互動拖鞋拍打十次，完成後收取好運祝福。純本機遊戲，不會上傳名字。">
+<meta name="apple-mobile-web-app-title" content="Friend Arcade">
+<link rel="icon" type="image/png" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<title>🩴 打小人｜Friend Arcade</title>
+<style>
+:root{color-scheme:light;--ink:#443128;--sub:#967a64;--brown:#805638;--gold:#f1bb67;--paper:#fff5dc;--edge:#d7b990;--red:#bc5f4e;--line:#ebd8bb;--shadow:0 13px 36px #72543722}
+*{box-sizing:border-box}html{background:#f9f0e0}body{margin:0;min-height:100svh;font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","PingFang HK","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:radial-gradient(ellipse at top left,#fff8ee 0,transparent 55%),radial-gradient(ellipse at top right,#f8e0b6 0,transparent 39%),#f9f0e0}a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #a36f46;outline-offset:3px}[hidden]{display:none!important}
+.shell{width:min(950px,calc(100% - 28px));margin:0 auto;padding:18px 0 42px}.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}.back{display:inline-flex;gap:7px;align-items:center;border:1px solid #e7d5b7;background:#fff8ec;border-radius:14px;padding:11px 14px;font-size:13px;font-weight:850;box-shadow:0 6px 15px #70462f15}.brand{font-size:11px;letter-spacing:.65px;color:#967b62;font-weight:900}
+.heading{text-align:center;padding:14px 0 20px}.heading .eyebrow{color:#b47f44;font-weight:950;letter-spacing:2px;font-size:11px}.heading h1{font-size:clamp(32px,5vw,48px);letter-spacing:-1.5px;margin:6px 0 6px}.heading p{font-size:13px;line-height:1.75;color:var(--sub);margin:0}
+.layout{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);gap:16px;align-items:start}.card{background:#fffaf1;border:1px solid #ebd7b9;border-radius:23px;box-shadow:var(--shadow);padding:20px;min-width:0}.card h2{font-size:19px;margin:0 0 6px}.subtitle{font-size:12px;color:var(--sub);line-height:1.8;margin:0 0 17px}.field{display:grid;gap:7px}.field label{font-weight:900;font-size:13px}.field input{background:#fffefa;border:1px solid #dec8a9;border-radius:13px;width:100%;padding:13px 14px;font-size:16px;color:var(--ink)}.hint{font-size:11px;color:#a28a75;line-height:1.7;margin:9px 0}.presets{display:flex;flex-wrap:wrap;gap:7px;margin:13px 0 17px}.preset{border:1px solid #e4ccab;border-radius:999px;background:#fff0d8;padding:8px 11px;font-size:12px;color:#8d6240;font-weight:850}.preset:active{transform:scale(.96)}.action{display:inline-flex;gap:8px;align-items:center;justify-content:center;padding:13px 17px;border:0;border-radius:14px;font-size:14px;font-weight:950;min-height:46px}.action.main{background:linear-gradient(#ce8067,#b95e4d);box-shadow:0 5px 0 #8b4338;color:white}.action.secondary{background:#fff0d9;border:1px solid #e6cead;color:#80583c}.action:disabled{opacity:.5;cursor:not-allowed}.action:active:not(:disabled){transform:translateY(2px)}.full{width:100%}.privacy{display:flex;align-items:flex-start;gap:8px;margin-top:15px;border-radius:13px;background:#f4eadb;padding:12px;color:#8b7358;font-size:11px;line-height:1.8}
+.play-card{padding:11px;overflow:hidden}.scene{position:relative;min-height:425px;border-radius:18px;background:linear-gradient(175deg,#f0c789,#e4b378 48%,#cf925b);overflow:hidden;isolation:isolate;border:1px solid #dfa974}.scene::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 37px,#fff4d012 38px 39px);pointer-events:none}.beam{position:absolute;top:0;left:0;right:0;height:73px;background:linear-gradient(#4b534a,#64665c);border-bottom:7px solid #3f4a44;box-shadow:0 9px 17px #6b50366c}.beam::after{content:"鵝頸橋下 · 好運祈願";position:absolute;left:18px;bottom:10px;color:#ffefd9;font-size:13px;font-weight:850;letter-spacing:1px}.street{position:absolute;inset:auto 0 0;height:110px;background:linear-gradient(#987b63,#b69c80);border-top:12px solid #8c725e}.street::after{content:"";position:absolute;left:0;right:0;top:35px;height:2px;background:#d2b79c8a}.scene-spark{position:absolute;opacity:.8;font-size:25px;pointer-events:none}.s1{left:10%;top:30%}.s2{right:12%;top:22%}.s3{left:21%;bottom:24%}
+.ritual{position:absolute;inset:72px 0 57px;display:flex;align-items:center;justify-content:center;flex-direction:column}.brick{position:absolute;bottom:3px;width:205px;height:28px;border-radius:11px 11px 7px 7px;background:linear-gradient(#a16c53,#87503f);box-shadow:inset 0 4px #bd8871,0 12px 0 #634538,0 20px 23px #674c3f88;border:2px solid #754c40}.brick::after{content:"";position:absolute;inset:12px 2px auto;border-bottom:2px solid #cf917b80}
+.paper-button{border:0;background:transparent;position:relative;z-index:4;display:block;padding:0;width:min(230px,72%);height:280px;touch-action:manipulation;transition:transform .2s ease}.paper{position:relative;width:100%;height:100%;filter:drop-shadow(0 9px 7px #65462a46);transform-origin:50% 80%;}.paper-head{position:absolute;left:50%;top:10px;transform:translateX(-50%);height:72px;width:70px;border:3px solid var(--edge);background:radial-gradient(circle at 30% 20%,#fffbe8,var(--paper));border-radius:50%;z-index:2}.paper-eye{position:absolute;top:29px;width:5px;height:5px;border-radius:50%;background:#996d50}.paper-eye.e1{left:20px}.paper-eye.e2{right:20px}.paper-smile{position:absolute;top:38px;left:26px;width:17px;height:9px;border-bottom:2px solid #996d50;border-radius:50%}
+.paper-body{position:absolute;inset:73px 0 0;background:linear-gradient(110deg,#f0dcaf,var(--paper) 26%,#fffce7 65%,#ecd3a2);border:3px solid var(--edge);clip-path:polygon(20% 0,80% 0,98% 43%,80% 50%,72% 100%,52% 100%,50% 70%,48% 100%,28% 100%,20% 50%,2% 43%);box-shadow:inset 0 0 18px #9a5e3226}.paper-mark{position:absolute;left:50%;top:109px;transform:translateX(-50%);width:58%;height:100px;display:flex;align-items:center;justify-content:center;background:#fff9e5;border:1px dashed #ba986a;border-radius:7px;z-index:3;padding:8px;overflow:hidden}.paper-mark span{font-size:clamp(14px,3vw,19px);font-weight:950;color:#8e5940;text-align:center;overflow-wrap:anywhere;word-break:break-word;line-height:1.3;max-height:90px;overflow:hidden}.paper-cracks{position:absolute;top:90px;left:20%;width:60%;height:130px;z-index:5;opacity:0;background:linear-gradient(128deg,transparent 47%,#9a7953aa 48%,transparent 49%) 0 0/35% 60%,linear-gradient(47deg,transparent 49%,#9a795388 50%,transparent 51%) 0 0/45% 55%;clip-path:polygon(7% 35%,95% 3%,90% 95%,14% 90%);pointer-events:none;transition:opacity .18s}.paper-button.hit .paper{animation:paper-hit .33s cubic-bezier(.19,.9,.32,1)}.paper-button.finished .paper{animation:paper-farewell .5s forwards}.paper-button:disabled{cursor:default}
+.shoe{position:absolute;right:max(8%,calc(50% - 205px));top:55px;z-index:7;font-size:90px;filter:drop-shadow(4px 8px 2px #573c2748);pointer-events:none;transform:rotate(38deg) translate(0,-13px);transform-origin:65% 80%}.shoe.swing{animation:shoe-hit .29s cubic-bezier(.13,.82,.33,.98)}.impact{position:absolute;z-index:8;left:50%;top:45%;font-size:36px;font-weight:1000;color:#fdf2c4;text-shadow:2px 3px #ab533f,-1px -1px #af6554;pointer-events:none;opacity:0;transform:translate(-50%,-50%)}.impact.pop{animation:impact .4s ease-out}.instruction{position:absolute;z-index:9;left:50%;bottom:23px;transform:translateX(-50%);white-space:nowrap;background:#ffedd7e3;border:1px solid #e2c197;color:#895a41;border-radius:999px;padding:10px 13px;font-size:12px;font-weight:900}
+.play-footer{padding:16px 9px 4px}.progress-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:900;color:#825941}.meter{height:11px;border-radius:999px;background:#f0dcc3;overflow:hidden;margin:10px 0 15px;border:1px solid #e9d2b4}.fill{height:100%;width:0;background:linear-gradient(90deg,#e5ac61,#c96d5e);border-radius:999px;transition:width .2s ease}.game-actions{display:flex;gap:9px;flex-wrap:wrap}.game-actions .main{flex:1}.game-actions .secondary{flex:0 0 auto}.live-status{margin-top:11px;font-size:12px;color:#9a745b;min-height:20px}.scene::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 50px #7d3a183b}
+.result{margin-top:15px;background:linear-gradient(140deg,#fff5d7,#ffecd4);border:1px solid #e9c899;border-radius:18px;padding:19px;text-align:center}.result h2{font-size:22px;margin:3px 0 8px}.result p{font-size:13px;color:#996f51;line-height:1.85;margin:0 0 14px}.result .fortune{font-size:18px;font-weight:950;color:#af5c45;padding:11px 6px}.result .action{margin:3px}.confetti-layer{position:absolute;inset:0;z-index:11;pointer-events:none;overflow:hidden}.confetti{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;left:var(--x);background:var(--color);transform:rotate(var(--rotation));animation:confetti-fall var(--duration) ease-in forwards;animation-delay:var(--delay)}
+.footer{text-align:center;font-size:10px;font-weight:800;color:#b2967e;letter-spacing:1.1px;margin-top:24px}
+@keyframes shoe-hit{0%{transform:rotate(38deg) translate(0,-13px)}48%{transform:rotate(-31deg) translate(-52px,72px) scale(1.11)}77%{transform:rotate(-14deg) translate(-25px,32px)}100%{transform:rotate(38deg) translate(0,-13px)}}
+@keyframes paper-hit{0%{transform:rotate(0) scale(1)}35%{transform:rotate(-6deg) scale(.96)}70%{transform:rotate(5deg) scale(.97)}100%{transform:rotate(0) scale(1)}}
+@keyframes paper-farewell{0%{opacity:1;transform:scale(1) rotate(0)}100%{opacity:0;transform:scale(.7) rotate(22deg)}}
+@keyframes impact{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}20%{opacity:1}80%{opacity:1;transform:translate(-50%,-72%) scale(1.25)}100%{opacity:0;transform:translate(-50%,-85%) scale(1.4)}}
+@keyframes confetti-fall{0%{opacity:1;transform:translateY(-25px) rotate(var(--rotation))}100%{opacity:0;transform:translateY(480px) rotate(calc(var(--rotation) + 420deg))}}
+@media(max-width:720px){.layout{grid-template-columns:1fr}.shell{padding-top:12px}.heading{padding:14px 0}.card{padding:16px}.play-card{padding:9px}.scene{min-height:375px}.ritual{inset:72px 0 57px}.paper-button{height:250px;width:min(210px,73%)}.paper-head{height:67px;width:66px}.paper-body{top:68px}.paper-mark{top:100px;height:91px}.shoe{right:3%;font-size:73px}.instruction{font-size:11px}}
+@media(max-width:360px){.shoe{font-size:62px}.game-actions .action{padding:12px}.paper-button{width:200px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="topbar">
+<a class="back" href="../">← 返回 Friend Arcade</a><span class="brand">🩴 HONG KONG · DA SIU YAN</span>
+</header>
+<section class="heading"><div class="eyebrow">港式解壓小遊戲</div><h1>🩴 打小人</h1><p>寫低想打走嘅煩惱或者名字，象徵式拍走唔開心，迎接好運！</p></section>
+<div class="layout">
+<section class="card" aria-labelledby="setupTitle">
+<h2 id="setupTitle">✏️ 自訂小人紙</h2>
+<p class="subtitle">填上文字，畫面會即時顯示喺小人紙上。可輸入中文、英文或者你想打走嘅煩惱。</p>
+<form id="startForm">
+<div class="field"><label for="targetName">小人姓名／煩惱名稱</label><input id="targetName" name="targetName" maxlength="60" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="壞運氣" placeholder="例如：壞運氣、考試壓力、某個名字" required aria-describedby="nameHint"></div>
+<p class="hint" id="nameHint">最多 30 個字，可隨時重設。名字唔會儲存或上傳。</p>
+<div class="presets" aria-label="快速選擇主題">
+<button class="preset" type="button" data-preset="壞運氣">🍀 壞運氣</button>
+<button class="preset" type="button" data-preset="考試壓力">📚 考試壓力</button>
+<button class="preset" type="button" data-preset="星期一">🥱 星期一</button>
+<button class="preset" type="button" data-preset="是非">💬 是非</button>
+</div>
+<button type="submit" class="action main full" id="startButton">🧧 生成小人紙 · 開始</button>
+</form>
+<div class="privacy"><span>🔒</span><span>此遊戲只喺本機運作：輸入文字唔會傳去 Firebase、排行榜或其他朋友手機。建議當成輕鬆搞笑遊戲，唔好用嚟威嚇或騷擾任何人。</span></div>
+</section>
+<section class="card play-card" aria-label="打小人遊戲">
+<div class="scene" id="scene">
+<div class="beam"></div><div class="street"></div><span class="scene-spark s1" aria-hidden="true">✦</span><span class="scene-spark s2" aria-hidden="true">✧</span><span class="scene-spark s3" aria-hidden="true">✺</span>
+<div class="ritual">
+<div class="brick" aria-hidden="true"></div>
+<button class="paper-button" id="paperButton" type="button" aria-label="點擊小人紙拍打" disabled>
+  <div class="paper">
+    <div class="paper-head"><i class="paper-eye e1"></i><i class="paper-eye e2"></i><i class="paper-smile"></i></div>
+    <div class="paper-body"></div>
+    <div class="paper-mark"><span id="paperName">壞運氣</span></div>
+    <div class="paper-cracks" id="paperCracks"></div>
+  </div>
+</button>
+<div class="shoe" id="shoe" aria-hidden="true">🩴</div>
+<div class="impact" id="impact" aria-hidden="true">啪！</div>
+</div>
+<div class="instruction" id="instruction">✨ 先填寫名稱，再開始拍打</div>
+<div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+</div>
+<div class="play-footer">
+<div class="progress-head"><span>🩴 拍打進度</span><span id="hitCount">0 / 10</span></div>
+<div class="meter" role="progressbar" id="hitProgress" aria-label="拍打進度" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><div class="fill" id="hitFill"></div></div>
+<div class="game-actions">
+<button type="button" class="action main" id="hitButton" disabled>🩴 打一下！</button>
+<button type="button" class="action secondary" id="soundButton" aria-pressed="true">🔊 音效開</button>
+<button type="button" class="action secondary" id="resetButton">↻ 重設</button>
+</div>
+<div class="live-status" id="liveStatus" role="status" aria-live="polite">準備好就按「開始」！</div>
+</div>
+<div class="result" id="resultPanel" hidden role="region" aria-labelledby="resultTitle">
+<div aria-hidden="true" style="font-size:38px">🧧✨</div>
+<h2 id="resultTitle">大功告成！</h2>
+<div class="fortune" id="fortuneText">打走霉運，好運齊來！</div>
+<p>已完成 10 次象徵式拍打。祝你今日一切順利！</p>
+<button type="button" class="action main" id="againButton">🩴 再玩一次</button>
+</div>
+</section>
+</div>
+<footer class="footer">FRIEND ARCADE ✦ 港式打小人 · 僅供娛樂</footer>
+</div>
+<script src="./app.js" defer></script>
+</body>
+</html>
