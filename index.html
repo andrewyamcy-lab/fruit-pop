@@ -58,7 +58,9 @@
     .end-score { font-size:44px; font-weight:900; color:var(--deep); margin:5px 0 16px; line-height:1; }
     .main-btn { border:0; padding:15px 23px; border-radius:17px; background:linear-gradient(130deg,#ff8693,#f35d89); color:white; box-shadow:0 7px 0 #d95178, 0 13px 19px #fa7d9840; font-weight:900; font-size:16px; }
     .main-btn:active { transform:translateY(4px); box-shadow:0 3px 0 #d95178; }
-    .foot { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 4px; }
+    .foot { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 4px; flex-wrap:wrap; }
+    .foot-links {display:flex;gap:12px;align-items:center;}
+    .foot-links a.text-btn {text-decoration:none;}
     .tip { display:flex; align-items:center; gap:7px; color:#b48e9a; font-size:12px; font-weight:800; line-height:1.3; }
     .hint-icon { font-size:17px; }
     .text-btn { background:none; border:0; padding:7px 2px; color:var(--deep); font-weight:900; font-size:12px; white-space:nowrap; }
@@ -127,11 +129,11 @@
       <canvas id="gameCanvas" width="360" height="520" aria-label="人像合成遊戲。左右拖動以瞄準，鬆開手指即可放下人像球。" role="img"></canvas>
       <div class="combo-toast" id="comboToast" aria-live="off"><strong id="comboText"></strong><span id="comboBonus"></span></div>
       <div class="game-over" id="gameOverOverlay" role="dialog" aria-modal="true" aria-labelledby="gameOverHeading">
-        <div class="end-card"><div class="end-emoji">🍉✨</div><h2 id="gameOverHeading">遊戲結束！</h2><p>今次遊戲分數</p><div class="end-score" id="finalScore">0</div><button class="main-btn" id="playAgain">再玩一次 ↻</button><p><button class="text-btn" id="endLeaderboardButton">🏆 玩家排行榜</button></p></div>
+        <div class="end-card"><div class="end-emoji">🍉✨</div><h2 id="gameOverHeading">遊戲結束！</h2><p>今次遊戲分數</p><div class="end-score" id="finalScore">0</div><button class="main-btn" id="playAgain">再玩一次 ↻</button><p><button class="text-btn" id="endLeaderboardButton">🏆 玩家排行榜</button></p><p><a class="text-btn" href="./arcade/">🏠 返回遊戲中心</a></p></div>
       </div>
     </div>
   </div>
-  <div class="foot"><div class="tip"><span class="hint-icon">👆</span><span>左右拖動瞄準 · 鬆手放下</span></div><button class="text-btn" id="helpButton">玩法教學</button></div>
+  <div class="foot"><div class="tip"><span class="hint-icon">👆</span><span>左右拖動瞄準 · 鬆手放下</span></div><div class="foot-links"><button class="text-btn" id="helpButton">玩法教學</button><a class="text-btn" href="./arcade/">🏠 遊戲中心</a></div></div>
   <button type="button" class="endgame-btn" id="endGameButton">⏹ 結束遊戲並儲存分數</button>
 </div>
 <div class="modal visible" id="startModal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
@@ -583,7 +585,9 @@ for(const p of PLAYERS){
 }
 $('startGameButton').addEventListener('click',()=>{
   if(!chosenPlayer)return;
-  selectedPlayer=chosenPlayer;closeModal('startModal');startGame();
+  selectedPlayer=chosenPlayer;
+  write('friendarcade-player-v1',selectedPlayer);
+  closeModal('startModal');startGame();
 });
 $('settingsButton').addEventListener('click',()=>{$('nameInput').value=gameName;applySettings();openModal('settingsModal');});
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
@@ -599,7 +603,19 @@ $('saveSettings').addEventListener('click',()=>{
 });
 window.addEventListener('visibilitychange',()=>{lastTime=0;accumulator=0;});
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
-startGame();openModal('startModal');requestAnimationFrame(frame);
+// Share the optional player choice with Friend Arcade (same GitHub Pages origin).
+// An explicit URL player from the hub takes priority over an earlier saved choice.
+const fromHub=new URLSearchParams(location.search).get('player');
+const storedHubPlayer=read('friendarcade-player-v1','');
+const validPlayer=id=>PLAYERS.some(p=>p.id===id);
+const initialPlayer=validPlayer(fromHub)?fromHub:(validPlayer(storedHubPlayer)?storedHubPlayer:null);
+if(initialPlayer){
+  selectedPlayer=initialPlayer;chosenPlayer=initialPlayer;
+  write('friendarcade-player-v1',initialPlayer);
+}
+startGame();
+if(selectedPlayer)closeModal('startModal');else openModal('startModal');
+requestAnimationFrame(frame);
 })();
 </script>
 <script src="./firebase-config.js"></script>

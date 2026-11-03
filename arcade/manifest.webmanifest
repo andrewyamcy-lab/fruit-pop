@@ -4,7 +4,7 @@
   "description": "七位朋友嘅遊戲、即時排行榜同未來功能入口。",
   "lang": "zh-Hant-HK",
   "start_url": "./",
-  "scope": "./",
+  "scope": "../",
   "display": "standalone",
   "background_color": "#f8f5fb",
   "theme_color": "#f8f5fb",

@@ -1,7 +1,7 @@
 {
   "name": "Fruit Pop｜人像合成遊戲",
   "short_name": "Fruit Pop",
-  "description": "選擇玩家、合成七級人像球、挑戰最高分，並與朋友分享排行榜。",
+  "description": "十級人像合成遊戲。連擊得分、挑戰朋友最高分，跨裝置共用排行榜。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
