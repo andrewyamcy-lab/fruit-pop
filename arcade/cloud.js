@@ -19,6 +19,7 @@ if(config?.apiKey && config?.projectId && config?.appId){
     },error=>{
       console.warn("Shared score feed unavailable",error);
       window.dispatchEvent(new Event("arcade-cloud-error"));
+    window.dispatchEvent(new Event("arcade-cloud-gatherings-error"));
     });
     // Read public gathering summaries for the home dashboard.
     // Never download vote records, private IDs, or edit any gathering here.
@@ -36,6 +37,7 @@ if(config?.apiKey && config?.projectId && config?.appId){
   })().catch(error=>{
     console.warn("Firebase failed",error);
     window.dispatchEvent(new Event("arcade-cloud-error"));
+    window.dispatchEvent(new Event("arcade-cloud-gatherings-error"));
   });
 }else{
   window.dispatchEvent(new Event("arcade-cloud-error"));
