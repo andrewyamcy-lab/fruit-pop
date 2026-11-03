@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#eaf7fa">
-<meta name="description" content="Friend Arcade 水族箱：欣賞不同顏色的魚隨機游動、餵魚及探索海底世界。">
+<meta name="description" content="Friend Arcade 七條人像魚水族箱：使用 Fruit Pop 第 1 至 7 級人像球，魚會隨機游動並可以餵食。">
 <title>Aquarium｜Friend Arcade 水族箱</title>
 <link rel="icon" type="image/png" href="../icon-192.png">
 <link rel="apple-touch-icon" href="../icon-192.png">
@@ -53,10 +53,10 @@ canvas{display:block;width:100%;height:clamp(325px,53vw,535px);touch-action:mani
 <section class="hero">
 <div class="eyebrow">YOUR LITTLE UNDERWATER WORLD</div>
 <h1>🐠 我的水族箱</h1>
-<p>睇住小魚自由游動，輕觸水面餵魚，享受一刻寧靜。</p>
+<p>7 條專屬人像小魚，分別使用 Fruit Pop 第 1–7 級照片，自由游動等你餵食。</p>
 </section>
 <div class="tank-frame"><div class="tank-inner">
-<canvas id="aquarium" role="img" aria-label="動態水族箱，有不同顏色的小魚隨機游動及氣泡。點擊水面可以餵魚。">你的瀏覽器需要支援 Canvas 才能看到水族箱。</canvas>
+<canvas id="aquarium" role="img" aria-label="動態水族箱，共有七條以 Fruit Pop 第 1 至 7 級人像球照片製作的小魚，會隨機游動。輕觸水面可以餵魚。">你的瀏覽器需要支援 Canvas 才能看到水族箱。</canvas>
 <div class="tank-bubble" id="status">🌊 海洋模式</div>
 <div class="tank-caption" id="feedHint">👆 輕觸水面餵魚</div>
 </div></div>
@@ -64,12 +64,10 @@ canvas{display:block;width:100%;height:clamp(325px,53vw,535px);touch-action:mani
 <button class="control primary" id="feedButton" type="button">🍤 餵魚</button>
 <button class="control" id="pauseButton" type="button" aria-pressed="false">⏸ 暫停</button>
 <button class="control" id="modeButton" type="button" aria-pressed="false">🌙 夜間模式</button>
-<label class="selector" for="fishCount">🐟 魚數量
-<select id="fishCount"><option value="6">6 條</option><option value="10" selected>10 條</option><option value="16">16 條</option></select>
-</label>
+<span class="selector" aria-label="固定七條人像魚">🐟 固定 7 條人像魚</span>
 </div>
-<div class="stats"><span>🐟 <strong id="fishStat">10</strong> 條魚</span><span>🍤 已餵食 <strong id="feedStat">0</strong> 次</span></div>
-<p class="note" id="activityText" role="status" aria-live="polite">魚會不斷改變方向，互相穿梭。如果想餵魚，可以輕觸水面或按「餵魚」。</p>
+<div class="stats"><span>🐟 <strong id="fishStat">7</strong> 條魚</span><span>🍤 已餵食 <strong id="feedStat">0</strong> 次</span></div>
+<p class="note" id="activityText" role="status" aria-live="polite">七條人像魚會隨機改變方向，各自游動。輕觸水面或按「餵魚」，就會游過來食嘢。</p>
 <footer class="footer">FRIEND ARCADE ✦ LITTLE AQUARIUM</footer>
 </div>
 <script src="./app.js" defer></script>

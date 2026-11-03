@@ -9,30 +9,36 @@ const palettes=[
   ["#9be4d4","#3ab9a6","#d8fff5"],["#9fcdff","#438ed0","#d8f0ff"],
   ["#f5a8a1","#ed7065","#ffe1d7"],["#e2dd8f","#a8b754","#f5f8c5"]
 ];
+const FISH_COUNT=7;
+const FACE_SOURCES=Object.freeze(Array.from({length:FISH_COUNT},(_,i)=>"../../balls/ball"+(i+1)+".png"));
+const FACE_IMAGES=FACE_SOURCES.map(src=>{
+  const image=new Image();
+  image.decoding="async";
+  image.onload=()=>draw();
+  image.onerror=()=>console.warn("人像圖片載入失敗：",src);
+  image.src=src;
+  return image;
+});
 const settingsKey="friendarcade-aquarium-v1";
-let settings={count:10,night:false};
+let settings={night:false};
 try{
  const old=JSON.parse(localStorage.getItem(settingsKey)||"null");
- if(old&&[6,10,16].includes(old.count))settings.count=old.count;
  if(old&&typeof old.night==="boolean")settings.night=old.night;
 }catch(_){}
-const save=()=>{try{localStorage.setItem(settingsKey,JSON.stringify(settings));}catch(_){}};
+const save=()=>{try{localStorage.setItem(settingsKey,JSON.stringify({night:settings.night}));}catch(_){}};
 const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches||false;
 let paused=reduced, worldW=0,worldH=0,background=null,fish=[],bubbles=[],foods=[],feedCount=0, last=0,elapsed=0,raf=0,active=true;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 function makeFish(i){
- const size=rand(.022,.037);
- return {x:rand(.08,.92),y:rand(.18,.77),vx:rand(-.038,.038)||.025,vy:rand(-.008,.008),
- tx:rand(.1,.9),ty:rand(.17,.77),changeIn:rand(.7,3.3),speed:rand(.022,.055),
- size,palette:palettes[i%palettes.length],phase:rand(0,Math.PI*2),depth:rand(.76,1.12)};
+ const size=rand(.027,.034);
+ return {faceIndex:i,x:rand(.10,.90),y:rand(.18,.77),vx:rand(-.038,.038)||.025,vy:rand(-.008,.008),
+ tx:rand(.12,.88),ty:rand(.17,.77),changeIn:rand(.7,3.3),speed:rand(.022,.055),
+ size,palette:palettes[i%palettes.length],phase:rand(0,Math.PI*2),depth:rand(.85,1.08)};
 }
-function setCount(n){
- settings.count=n;
- if(fish.length>n)fish.length=n;
- while(fish.length<n)fish.push(makeFish(fish.length));
- $("fishCount").value=String(n);$("fishStat").textContent=String(n);save();
-}
+// Fixed collection: exactly one fish for each original Fruit Pop ball (1–7).
+for(let i=0;i<FISH_COUNT;i++)fish.push(makeFish(i));
+$("fishStat").textContent=String(FISH_COUNT);
 function backgroundPaint(){
  const bg=document.createElement("canvas");bg.width=Math.max(1,Math.round(worldW));bg.height=Math.max(1,Math.round(worldH));
  const g=bg.getContext("2d");const w=bg.width,h=bg.height;
@@ -129,7 +135,7 @@ function update(dt){
 }
 function paintFish(f){
  const x=f.x*worldW,y=f.y*worldH,
-  s=clamp(worldW*.034,11,27)*(f.size/.029)*f.depth,
+  s=clamp(worldW*.077,25,46)*(f.size/.029)*f.depth,
   angle=Math.atan2(f.vy*(worldH/worldW),f.vx);
  const [light,dark,highlight]=f.palette,tailSwing=Math.sin(elapsed*9+f.phase)*.27;
  ctx.save();ctx.translate(x,y);ctx.rotate(angle);
@@ -153,6 +159,25 @@ function paintFish(f){
  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(s*.56,-s*.18,Math.max(2,s*.14),0,Math.PI*2);ctx.fill();
  ctx.fillStyle="#203e55";ctx.beginPath();ctx.arc(s*.61,-s*.18,Math.max(1.15,s*.075),0,Math.PI*2);ctx.fill();
  ctx.strokeStyle=dark;ctx.lineWidth=Math.max(.8,s*.04);ctx.beginPath();ctx.arc(s*.68,s*.12,s*.09,.04,1.8);ctx.stroke();
+ ctx.restore();
+ // Keep the face upright even when a fish turns left.
+ // Clip each original ball photo into a circular portrait over its fish body.
+ ctx.save();ctx.translate(x,y);
+ const portraitRadius=s*.63;
+ ctx.beginPath();ctx.arc(0,0,portraitRadius,0,Math.PI*2);
+ ctx.fillStyle=highlight;ctx.fill();
+ ctx.save();ctx.clip();
+ const photo=FACE_IMAGES[f.faceIndex];
+ if(photo && photo.complete && photo.naturalWidth>0){
+   ctx.drawImage(photo,-portraitRadius,-portraitRadius,portraitRadius*2,portraitRadius*2);
+ }else{
+   ctx.fillStyle="#fffc";ctx.fillRect(-portraitRadius,-portraitRadius,portraitRadius*2,portraitRadius*2);
+   ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="bold "+Math.round(portraitRadius)+"px system-ui";
+   ctx.fillStyle=dark;ctx.fillText(String(f.faceIndex+1),0,0);
+ }
+ ctx.restore();
+ ctx.lineWidth=Math.max(1.6,s*.095);ctx.strokeStyle="#ffffffed";
+ ctx.beginPath();ctx.arc(0,0,portraitRadius,0,Math.PI*2);ctx.stroke();
  ctx.restore();
 }
 function draw(){
@@ -192,7 +217,6 @@ $("pauseButton").addEventListener("click",()=>{
 $("modeButton").addEventListener("click",()=>{
  settings.night=!settings.night;save();backgroundPaint();draw();refreshButtons();
 });
-$("fishCount").addEventListener("change",e=>setCount(Number(e.target.value)));
 $("feedButton").addEventListener("click",()=>addFood(rand(.2,.8),.12));
 canvas.addEventListener("pointerdown",event=>{
  if(event.pointerType==="mouse"&&event.button!==0)return;
@@ -205,8 +229,8 @@ document.addEventListener("visibilitychange",()=>{last=0;active=!document.hidden
 window.addEventListener("pagehide",()=>{active=false;last=0;});
 window.addEventListener("pageshow",()=>{active=true;last=0;});
 window.addEventListener("resize",resize);
-setCount(settings.count);refreshButtons();resize();
+refreshButtons();resize();
 if(reduced){$("activityText").textContent="已按系統減少動態效果設定暫停。按「繼續」可讓小魚游動。";}
 raf=requestAnimationFrame(frame);
-window.__aquariumDebug={getState:()=>({fish:fish.length,foods:foods.length,paused,night:settings.night,feedCount,worldW,worldH}),setCount,addFood,update,draw,resize,makeFish,stop:()=>cancelAnimationFrame(raf)};
+window.__aquariumDebug={getState:()=>({fish:fish.length,faces:fish.map(f=>f.faceIndex+1),imageSources:FACE_SOURCES.slice(),imagesLoaded:FACE_IMAGES.filter(img=>img.complete&&img.naturalWidth>0).length,foods:foods.length,paused,night:settings.night,feedCount,worldW,worldH}),addFood,update,draw,resize,makeFish,stop:()=>cancelAnimationFrame(raf)};
 })();
