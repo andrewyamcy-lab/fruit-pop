@@ -31,6 +31,43 @@
 @media(max-width:720px){.layout{grid-template-columns:1fr}.shell{padding-top:12px}.heading{padding:14px 0}.card{padding:16px}.play-card{padding:9px}.scene{min-height:375px}.ritual{inset:72px 0 57px}.paper-button{height:250px;width:min(210px,73%)}.paper-head{height:67px;width:66px}.paper-body{top:68px}.paper-mark{top:100px;height:91px}.shoe{right:3%;font-size:73px}.instruction{font-size:11px}}
 @media(max-width:360px){.shoe{font-size:62px}.game-actions .action{padding:12px}.paper-button{width:200px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}}
+
+/* Art upgrade: authentic Hong Kong bridge-side miniature scene and illustrated objects.
+   CSS paper/slipper remain as fallbacks on browsers that cannot decode AVIF. */
+.scene{
+ background-color:#b47a59;
+ background-image:linear-gradient(180deg,#2c261015,#23140b22),url("./assets/bridge-scene.avif");
+ background-size:cover;
+ background-position:center center;
+}
+.scene::before,.beam,.street,.scene-spark,.brick{display:none}
+.scene::after{box-shadow:inset 0 0 46px #3f1d161b}
+.ritual{inset:50px 0 43px}
+.paper-button{width:min(235px,73%);height:280px}
+.paper-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:3;filter:drop-shadow(0 4px 5px #37291c30)}
+.paper-button.has-paper-art .paper-head,.paper-button.has-paper-art .paper-body{display:none}
+.paper-mark{
+ left:50%;top:43%;width:46%;height:25%;
+ z-index:4;background:transparent;border:0;border-radius:0;padding:3px 2px;
+}
+.paper-mark span{
+ font-size:clamp(12px,2.4vw,16px);color:#88442d;
+ line-height:1.18;max-height:95%;text-shadow:0 1px 0 #ffedc9;
+}
+.paper-cracks{z-index:5;top:42%;left:23%;height:29%;width:53%}
+.shoe{width:172px;height:106px;top:51px;right:max(2%,calc(50% - 213px));transform-origin:65% 80%}
+.shoe-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(3px 5px 3px #56351e70)}
+.shoe.has-shoe-art{font-size:0}
+.instruction{background:#fff4deef;box-shadow:0 4px 10px #41270d2a}
+@media(max-width:720px){
+ .scene{min-height:385px}
+ .ritual{inset:61px 0 47px}
+ .paper-button{height:247px;width:min(208px,70%)}
+ .paper-mark span{font-size:clamp(11px,3.4vw,14px)}
+ .shoe{width:137px;height:88px;top:42px;right:0}
+}
+@media(max-width:360px){.shoe{width:118px;height:82px;top:35px}}
+
 </style>
 </head>
 <body>
@@ -38,7 +75,7 @@
 <header class="topbar">
 <a class="back" href="../">← 返回 Friend Arcade</a><span class="brand">🩴 HONG KONG · DA SIU YAN</span>
 </header>
-<section class="heading"><div class="eyebrow">港式解壓小遊戲</div><h1>🩴 打小人</h1><p>寫低想打走嘅煩惱或者名字，象徵式拍走唔開心，迎接好運！</p></section>
+<section class="heading"><div class="eyebrow">港式解壓小遊戲</div><h1>🩴 打小人</h1><p>全新港式插畫場景！寫低想打走嘅煩惱或者名字，拍走唔開心，迎接好運！</p></section>
 <div class="layout">
 <section class="card" aria-labelledby="setupTitle">
 <h2 id="setupTitle">✏️ 自訂小人紙</h2>
@@ -63,13 +100,14 @@
 <div class="brick" aria-hidden="true"></div>
 <button class="paper-button" id="paperButton" type="button" aria-label="點擊小人紙拍打" disabled>
   <div class="paper">
+    <img class="paper-art" id="paperArtwork" src="./assets/paper-effigy.avif" alt="" decoding="async">
     <div class="paper-head"><i class="paper-eye e1"></i><i class="paper-eye e2"></i><i class="paper-smile"></i></div>
     <div class="paper-body"></div>
     <div class="paper-mark"><span id="paperName">壞運氣</span></div>
     <div class="paper-cracks" id="paperCracks"></div>
   </div>
 </button>
-<div class="shoe" id="shoe" aria-hidden="true">🩴</div>
+<div class="shoe" id="shoe" aria-hidden="true">🩴<img class="shoe-art" id="shoeArtwork" src="./assets/red-slipper.avif" alt="" decoding="async"></div>
 <div class="impact" id="impact" aria-hidden="true">啪！</div>
 </div>
 <div class="instruction" id="instruction">✨ 先填寫名稱，再開始拍打</div>

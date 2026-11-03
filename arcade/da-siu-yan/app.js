@@ -139,6 +139,17 @@ $("soundButton").addEventListener("click",()=>{
  $("soundButton").setAttribute("aria-pressed",String(state.soundOn));
 });
 updatePreview();
+// Show the illustrated artwork only when it has decoded successfully.
+// Older browsers keep the original CSS/emoji fallback.
+for(const [imgId,hostId,loadedClass] of [
+ ["paperArtwork","paperButton","has-paper-art"],
+ ["shoeArtwork","shoe","has-shoe-art"]
+]){
+ const image=$(imgId),host=$(hostId);
+ const checkImage=()=>{if(image.complete&&image.naturalWidth>0)host.classList.add(loadedClass);};
+ image.addEventListener("load",checkImage);
+ checkImage();
+}
 window.__daSiuYanDebug={
  getState:()=>({phase:state.phase,name:state.name,hits:state.hits,soundOn:state.soundOn,finishPending:state.finishTimer!==null}),
  startGame,hit,reset,finish,cleanName,
