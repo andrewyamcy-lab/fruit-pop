@@ -2,10 +2,12 @@
 "use strict";
 const C=window.SameWordCore;
 const $=id=>document.getElementById(id);
-const ROOMS="friendarcade_sameword_rooms_v1", CODES="friendarcade_sameword_codes_v1", STORAGE="friendarcade-player-v1";
+const ROOMS="friendarcade_sameword_rooms_v1", CODES="friendarcade_sameword_codes_v1",
+ LOBBIES="friendarcade_sameword_lobbies_v1", STORAGE="friendarcade-player-v1";
 const state={
  db:null,sdk:null,uid:null,roomId:null,roomCode:null,room:null,ready:false,busy:false,
- unsubscribe:null,answerKey:null,answers:new Map(),history:new Map(),
+ unsubscribe:null,unsubscribeLobbies:null,lobbyState:"loading",lobbies:[],pendingRoom:null,
+ answerKey:null,answers:new Map(),history:new Map(),
  roundLoading:false,lastAdvance:0,previousStage:"",historyRequest:new Set(),loadAttempts:new Map(),joined:false
 };
 let player=null,toastTimeout=null;
@@ -24,6 +26,56 @@ function firebaseError(err,action){
 }
 function coreResult(){return C.result(state.room);}
 function roomRef(){return state.sdk.doc(state.db,ROOMS,state.roomId);}
+function lobbyRef(id){return state.sdk.doc(state.db,LOBBIES,id);}
+function renderAvailable(){
+ const host=$("availableList");host.replaceChildren();
+ if(state.lobbyState==="loading"||!state.ready){
+  const p=document.createElement("p");p.className="available-empty";p.textContent="正在連接即時房間列表…";host.appendChild(p);return;
+ }
+ if(state.lobbyState==="error"){
+  const p=document.createElement("p");p.className="available-empty";
+  p.textContent="⚠️ 無法讀取公開房間。請更新 Firebase 規則，或使用三位數房間代碼加入。";
+  host.appendChild(p);return;
+ }
+ const visible=state.lobbies.filter(item=>C.joinableLobby(item)).slice(0,8);
+ if(!visible.length){
+  const p=document.createElement("p");p.className="available-empty";
+  p.textContent="暫時未有可加入嘅公開房間。你可以建立新房間，或者用朋友嘅三位數代碼加入。";
+  host.appendChild(p);return;
+ }
+ for(const item of visible){
+  const outer=document.createElement("div");outer.className="available-item";
+  const heading=document.createElement("div");heading.className="available-main";
+  const text=document.createElement("div"),name=document.createElement("strong"),meta=document.createElement("small");
+  name.textContent="🎮 "+label(item.hostPlayer)+" 嘅房間";
+  meta.textContent="房間 #"+item.code+" · 等待開始";
+  text.append(name,meta);
+  const count=document.createElement("span");count.className="badge green";count.textContent=item.memberCount+" / 7";
+  heading.append(text,count);
+  const who=document.createElement("p");who.className="available-meta";
+  who.textContent="已加入："+(Array.isArray(item.memberNames)?item.memberNames.map(label).join("、"):"朋友");
+  const bar=document.createElement("div");bar.className="available-progress";
+  const fill=document.createElement("span");fill.style.width=String(Math.min(100,item.memberCount/7*100))+"%";bar.appendChild(fill);
+  const join=document.createElement("button");join.type="button";join.className="primary wide";
+  join.textContent="一鍵加入房間 →";join.disabled=state.busy;
+  join.addEventListener("click",()=>quickJoin(item.roomId,item.code));
+  outer.append(heading,who,bar,join);host.appendChild(outer);
+ }
+}
+function startLobbyFeed(){
+ if(state.unsubscribeLobbies)state.unsubscribeLobbies();
+ state.lobbyState="loading";renderAvailable();
+ const collection=state.sdk.collection(state.db,LOBBIES);
+ const q=state.sdk.query(collection,state.sdk.orderBy("createdAt","desc"),state.sdk.limit(30));
+ state.unsubscribeLobbies=state.sdk.onSnapshot(q,snapshot=>{
+  state.lobbies=snapshot.docs.map(doc=>({...doc.data(),roomId:doc.id}));
+  state.lobbyState="ready";renderAvailable();
+ },err=>{
+  state.lobbyState="error";state.lobbies=[];renderAvailable();
+  console.warn("SameWord lobby list unavailable",err);
+ });
+}
+setInterval(()=>{if(!state.roomId&&state.lobbyState==="ready")renderAvailable();},60000);
 function answersRef(round){return state.sdk.collection(state.db,ROOMS,state.roomId,"rounds",String(round),"answers");}
 function answerRef(round,id){return state.sdk.doc(state.db,ROOMS,state.roomId,"rounds",String(round),"answers",id);}
 function member(){return !!(player&&state.room?.members?.[player]===state.uid);}
@@ -35,7 +87,11 @@ function choosePlayer(id){
  player=id;
  try{localStorage.setItem(STORAGE,id);}catch(_){}
  txt("playerName",label(id));$("picker").hidden=true;
- render();renderPicker();
+ render();renderPicker();renderAvailable();
+ if(state.pendingRoom){
+  const selected=state.pendingRoom;state.pendingRoom=null;
+  void quickJoin(selected.id,selected.code);
+ }
 }
 function renderPicker(){
  $("choices").replaceChildren();
@@ -119,6 +175,7 @@ async function createRoom(){
  state.busy=true;render();
  try{
   const ref=state.sdk.doc(state.sdk.collection(state.db,ROOMS));
+  const listed=$("listPublic").checked;
   let code=null;
   // Atomically reserve one three-digit alias and its underlying room.
   for(let attempt=0;attempt<12;attempt++){
@@ -131,9 +188,13 @@ async function createRoom(){
      if(existing.exists())throw new Error("room-code-taken");
      const stamp=state.sdk.serverTimestamp();
      tx.set(ref,{hostUid:state.uid,hostPlayer:player,lastJoined:player,
-       code:candidate,members:{[player]:state.uid},stage:"lobby",
+       code:candidate,listed,members:{[player]:state.uid},stage:"lobby",
        round:0,startedAt:null,submitted:[],agree:[],disagree:[],createdAt:stamp});
      tx.set(alias,{roomId:ref.id,hostUid:state.uid,createdAt:stamp});
+     if(listed)tx.set(lobbyRef(ref.id),{
+       code:candidate,listed:true,hostPlayer:player,memberNames:[player],memberCount:1,
+       stage:"lobby",createdAt:stamp,updatedAt:stamp
+     });
     });
     code=candidate;break;
    }catch(err){
@@ -159,7 +220,7 @@ async function resolveCode(code){
   if(!snap.exists()){info("搵唔到房間 "+code+"，請核對代碼。");return;}
   const id=snap.data().roomId;
   if(!C.validRoom(id)){info("房間資料無效，請聯絡房主。");return;}
-  attachRoom(id,code);
+  await quickJoin(id,code);
  }catch(err){firebaseError(err,"尋找房間");}
 }
 $("joinForm").addEventListener("submit",async e=>{
@@ -167,28 +228,59 @@ $("joinForm").addEventListener("submit",async e=>{
  if(!checkName())return;
  await resolveCode(C.normalizeCode($("roomCode").value));
 });
-async function joinSelected(){
- if(!checkName()||!state.room||state.busy)return;
- if(state.room.stage!=="lobby"){info("遊戲已開始，暫時不能中途加入。");return;}
- const occupant=state.room.members?.[player];
- if(occupant===state.uid){info("你已經加入咗呢個房間。");return;}
- if(occupant){info("呢個名字已經由另一部裝置使用。請揀另一個名字。");return;}
- if(Object.keys(state.room.members).length>=7){info("房間已滿。");return;}
- state.busy=true;render();
+async function quickJoin(id,code=null){
+ if(!C.validRoom(id)||!state.ready){info("房間資料無效或 Firebase 未連接。");return;}
+ if(!player){
+  state.pendingRoom={id,code};$("picker").hidden=false;renderPicker();
+  info("請先選擇自己嘅名字，就會直接加入房間。");return;
+ }
+ if(state.busy)return;
+ state.busy=true;render();renderAvailable();
  try{
-  await state.sdk.updateDoc(roomRef(),{["members."+player]:state.uid,lastJoined:player});
+  // Check the real room immediately before joining: the public card can be stale.
+  const ref=state.sdk.doc(state.db,ROOMS,id);
+  const snap=await state.sdk.getDoc(ref);
+  if(!snap.exists()){info("呢個房間已經不存在。");return;}
+  const room=snap.data();
+  if(room.members?.[player]===state.uid){attachRoom(id,code||room.code);return;}
+  if(room.stage!=="lobby"){info("呢個房間已經開始，不能再加入。");return;}
+  if(room.members?.[player]){info("呢個名字已經由另一部裝置使用，請選擇正確玩家。");return;}
+  if(Object.values(room.members||{}).includes(state.uid)){info("你已經用另一個名字加入呢個房間。");return;}
+  if(Object.keys(room.members||{}).length>=7){info("房間已滿，無法加入。");return;}
+  const changes={["members."+player]:state.uid,lastJoined:player};
+  if(room.listed===true){
+   const batch=state.sdk.writeBatch(state.db);
+   batch.update(ref,changes);
+   batch.update(lobbyRef(id),{
+    memberNames:state.sdk.arrayUnion(player),memberCount:state.sdk.increment(1),
+    updatedAt:state.sdk.serverTimestamp()
+   });
+   await batch.commit();
+  }else{
+   // Backwards compatibility: earlier and private rooms have no public lobby.
+   await state.sdk.updateDoc(ref,changes);
+  }
+  attachRoom(id,code||room.code);
   info("✅ 已加入房間！等房主開始遊戲。");
  }catch(err){firebaseError(err,"加入房間");}
- finally{state.busy=false;render();}
+ finally{state.busy=false;render();renderAvailable();}
+}
+async function joinSelected(){
+ if(!state.roomId)return;
+ await quickJoin(state.roomId,state.roomCode);
 }
 $("joinSelected").addEventListener("click",joinSelected);
 async function startRoom(){
  if(!owner()||state.room.stage!=="lobby"||participants().length<2||state.busy)return;
  state.busy=true;
  try{
-  await state.sdk.updateDoc(roomRef(),{
-   stage:"input",round:1,startedAt:state.sdk.serverTimestamp()
-  });
+  const change={stage:"input",round:1,startedAt:state.sdk.serverTimestamp()};
+  if(state.room.listed===true){
+   const batch=state.sdk.writeBatch(state.db);
+   batch.update(roomRef(),change);
+   batch.update(lobbyRef(state.roomId),{stage:"started",updatedAt:state.sdk.serverTimestamp()});
+   await batch.commit();
+  }else await state.sdk.updateDoc(roomRef(),change);
  }catch(err){firebaseError(err,"開始遊戲");}
  finally{state.busy=false;render();}
 }
@@ -400,7 +492,7 @@ function connect(){
   state.uid=signed.user.uid;state.sdk=d;state.db=d.getFirestore(firebaseApp);
   state.ready=true;$("connectionDot").classList.add("online");
   txt("connectionMessage","🌐 已連接 Firebase · 可跨手機即時同步");
-  render();
+  render();startLobbyFeed();
   const params=new URLSearchParams(location.search);
   const raw=params.get("code");
   const code=C.validLegacyCode(String(raw||"").toUpperCase())?String(raw).toUpperCase():C.normalizeCode(raw);
@@ -413,9 +505,11 @@ function connect(){
  });
 }
 window.SameWordDebug={
- getState:()=>({player,ready:state.ready,roomId:state.roomId,roomCode:state.roomCode,stage:state.room?.stage,round:state.room?.round,
+ getState:()=>({player,ready:state.ready,roomId:state.roomId,roomCode:state.roomCode,
+  lobbyState:state.lobbyState,openRooms:state.lobbies.filter(item=>C.joinableLobby(item)).length,
+  stage:state.room?.stage,round:state.room?.round,
   members:participants(),submitted:state.room?.submitted||[],answers:[...state.answers.entries()],history:[...state.history.keys()]}),
  core:C
 };
-render();connect();
+render();renderAvailable();connect();
 })();

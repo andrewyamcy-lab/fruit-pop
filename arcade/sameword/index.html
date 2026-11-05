@@ -27,6 +27,25 @@ header.hero{text-align:center;padding:29px 12px 25px}.eyebrow{font-size:11px;let
 @media(max-width:650px){.shell{width:calc(100% - 20px);padding-top:11px}.grid{grid-template-columns:1fr}.card{padding:17px;border-radius:19px}.hero{padding:20px 5px 19px!important}.names{grid-template-columns:repeat(2,minmax(0,1fr))}.voting button{padding:10px 7px;font-size:13px}.word{min-height:63px}.timerbox{padding:18px}.roomtop{gap:8px}}
 .roomcode strong{font-size:27px;letter-spacing:6px;color:#6747a8}
 #roomCode{text-align:center;letter-spacing:7px;font-weight:950;font-size:23px}
+
+.available-wrap{margin-bottom:15px}
+.available-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+.available-title h2{margin:0;font-size:19px}
+.online-label{display:inline-flex;gap:7px;align-items:center;font-size:11px;font-weight:850;color:#287e5d}
+.online-label::before{content:"";width:8px;height:8px;border-radius:50%;background:#39a47d}
+.available-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.available-item{background:linear-gradient(125deg,#fcfaff,#f3edff);border:1px solid #e7ddf3;border-radius:16px;padding:14px;display:grid;gap:10px}
+.available-main{display:flex;justify-content:space-between;gap:8px;align-items:start}
+.available-main strong{display:block;font-size:14px}
+.available-main small{display:block;margin-top:6px;color:#8c7d9f;font-size:11px}
+.available-meta{font-size:12px;color:#77658b}
+.available-empty{padding:17px 14px;border:1px dashed #e1d7ed;background:#faf8ff;color:#877998;border-radius:14px;font-size:12px;line-height:1.75}
+.available-progress{height:7px;border-radius:99px;overflow:hidden;background:#e8dff2}
+.available-progress span{display:block;height:100%;border-radius:99px;background:#a182d2}
+.private-choice{display:flex;align-items:start;gap:9px;font-size:12px;color:#6e5b85;line-height:1.6;margin:10px 0 16px}
+.private-choice input{width:18px;height:18px;accent-color:#7754b6;flex:0 0 18px}
+@media(max-width:650px){.available-list{grid-template-columns:1fr}.available-item{padding:12px}}
+
 </style>
 </head>
 <body>
@@ -34,10 +53,18 @@ header.hero{text-align:center;padding:29px 12px 25px}.eyebrow{font-size:11px;let
 <div class="top"><a class="back" href="../">← Friend Arcade</a><button id="playerButton" class="player" type="button">👤 <span id="playerName">選擇玩家</span> ⌄</button></div>
 <header class="hero"><div class="eyebrow">SEVEN FRIENDS · ONE WORD</div><h1>🧠 SameWord</h1><p>每人 30 秒諗一個詞語 · 一齊判斷意思係咪相同 · 睇住歷史答案繼續下一輪</p></header>
 <div class="status" id="connectionStatus"><i class="dot" id="connectionDot"></i><span id="connectionMessage">正在連接 Firebase…</span></div>
-<section class="grid" id="entryView">
- <div class="card"><h2>✨ 建立新房間</h2><p class="sub">由你做房主，邀請 2–7 位朋友加入。毋須註冊或輸入密碼。</p><button class="primary wide" id="createRoom" disabled>＋ 建立 SameWord 房間</button></div>
+<div id="entryView">
+<section class="card available-wrap" aria-labelledby="availableHeading">
+ <div class="available-title"><h2 id="availableHeading">🎮 朋友開緊嘅房間</h2><span class="online-label">即時房間列表</span></div>
+ <p class="sub">有人開咗公開房間就會顯示喺度。選擇自己名字，一按即可加入，唔使輸入房間號碼。</p>
+ <div id="availableList" class="available-list" aria-live="polite"><p class="available-empty">正在尋找可加入嘅房間…</p></div>
+ <p class="muted" style="margin-top:12px">只顯示最近建立、未開始、未滿員嘅公開房間。「等待開始」唔代表房主一定在線。</p>
+</section>
+<section class="grid">
+ <div class="card"><h2>✨ 建立新房間</h2><p class="sub">由你做房主，邀請 2–7 位朋友加入。毋須註冊或輸入密碼。</p><label class="private-choice"><input id="listPublic" type="checkbox" checked><span>顯示喺公開房間列表（取消勾選就只可以用代碼／連結加入）</span></label><button class="primary wide" id="createRoom" disabled>＋ 建立 SameWord 房間</button></div>
  <div class="card"><h2>🔗 加入朋友房間</h2><p class="sub">輸入朋友分享嘅房間代碼，或者直接開啟邀請連結。</p><form id="joinForm"><div class="field"><label for="roomCode">房間代碼（3 位數字）</label><input id="roomCode" type="text" inputmode="numeric" maxlength="3" pattern="[0-9]{3}" placeholder="例如 007" autocomplete="off" spellcheck="false" autocapitalize="off" required></div><button class="secondary wide" id="joinRoom" type="submit" disabled>加入房間 →</button></form></div>
 </section>
+</div>
 <div id="roomView" hidden>
  <section class="card">
  <div class="roomtop"><div><div class="eyebrow">SAMEWORD ROOM</div><div class="roomcode">房間代碼：<strong id="displayRoomCode"></strong></div><p class="muted" style="margin-top:5px">用 3 位數字加入，例如 007；此代碼並非私密密碼。</p></div><div class="row"><span class="badge" id="stageBadge">準備中</span><button class="secondary" id="shareRoom" type="button">🔗 分享邀請</button><button class="quiet" id="leaveRoom" type="button">離開頁面</button></div></div>

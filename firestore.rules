@@ -127,8 +127,74 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Public SameWord room directory. Only harmless room summaries are readable;
+    // never publish members' anonymous UIDs or unrevealed answers here.
+    // The paired room document is updated in the SAME atomic transaction/batch.
+    match /friendarcade_sameword_lobbies_v1/{roomId} {
+      function originalRoom() {
+        return get(/databases/$(database)/documents/friendarcade_sameword_rooms_v1/$(roomId)).data;
+      }
+      function futureRoom() {
+        return getAfter(/databases/$(database)/documents/friendarcade_sameword_rooms_v1/$(roomId)).data;
+      }
+      function changes() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+      allow get: if request.auth != null;
+      // The query MUST include limit(30); the client orders by createdAt.
+      allow list: if request.auth != null && request.query.limit <= 30;
+      allow create: if request.auth != null
+        && roomId.matches('^[A-Za-z0-9]{20}$')
+        && request.resource.data.keys().hasAll(['code','listed','hostPlayer','memberNames','memberCount','stage','createdAt','updatedAt'])
+        && request.resource.data.keys().hasOnly(['code','listed','hostPlayer','memberNames','memberCount','stage','createdAt','updatedAt'])
+        && request.resource.data.code is string
+        && request.resource.data.code.matches('^[0-9]{3}$')
+        && request.resource.data.listed == true
+        && validSameWordName(request.resource.data.hostPlayer)
+        && request.resource.data.memberNames == [request.resource.data.hostPlayer]
+        && request.resource.data.memberCount == 1
+        && request.resource.data.stage == 'lobby'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && futureRoom().hostUid == request.auth.uid
+        && futureRoom().hostPlayer == request.resource.data.hostPlayer
+        && futureRoom().members[request.resource.data.hostPlayer] == request.auth.uid
+        && futureRoom().code == request.resource.data.code
+        && futureRoom().listed == true;
+      allow update: if request.auth != null && (
+        // A friend joins. Both room membership and public count must change together.
+        (resource.data.stage == 'lobby'
+          && changes().hasOnly(['memberNames','memberCount','updatedAt'])
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.memberCount == resource.data.memberCount + 1
+          && request.resource.data.memberCount <= 7
+          && validSameWordName(futureRoom().lastJoined)
+          && request.resource.data.memberNames == resource.data.memberNames.concat([futureRoom().lastJoined])
+          && futureRoom().stage == 'lobby'
+          && futureRoom().listed == true
+          && futureRoom().members[futureRoom().lastJoined] == request.auth.uid
+          && originalRoom().members.size() + 1 == futureRoom().members.size()
+          && futureRoom().members.size() == request.resource.data.memberCount)
+        ||
+        // The host starts: immediately remove room from joinable list.
+        (resource.data.stage == 'lobby'
+          && changes().hasOnly(['stage','updatedAt'])
+          && request.resource.data.stage == 'started'
+          && request.resource.data.updatedAt == request.time
+          && originalRoom().stage == 'lobby'
+          && futureRoom().stage == 'input'
+          && futureRoom().listed == true
+          && futureRoom().members.size() >= 2
+          && futureRoom().hostUid == request.auth.uid)
+      );
+      allow delete: if false;
+    }
+
     match /friendarcade_sameword_rooms_v1/{roomId} {
       function delta() { return request.resource.data.diff(resource.data).affectedKeys(); }
+      function lobbyPath() {
+        return /databases/$(database)/documents/friendarcade_sameword_lobbies_v1/$(roomId);
+      }
       function newSubmittedPlayer() {
         return request.resource.data.submitted.size()>0
           ? request.resource.data.submitted[request.resource.data.submitted.size()-1] : '';
@@ -159,7 +225,11 @@ service cloud.firestore {
           && changed.addedKeys().size()==1
           && changed.changedKeys().size()==0
           && changed.removedKeys().size()==0
-          && request.resource.data.members[n]==request.auth.uid;
+          && request.resource.data.members[n]==request.auth.uid
+          && (resource.data.get('listed',false) == false
+              || (getAfter(lobbyPath()).data.stage == 'lobby'
+                  && getAfter(lobbyPath()).data.memberCount == request.resource.data.members.size()
+                  && getAfter(lobbyPath()).data.memberNames.hasAll(request.resource.data.members.keys())));
       }
       function hostStart() {
         return resource.data.stage == 'lobby'
@@ -168,7 +238,9 @@ service cloud.firestore {
           && delta().hasOnly(['stage','round','startedAt'])
           && request.resource.data.stage=='input'
           && request.resource.data.round==1
-          && request.resource.data.startedAt==request.time;
+          && request.resource.data.startedAt==request.time
+          && (resource.data.get('listed',false) == false
+              || getAfter(lobbyPath()).data.stage == 'started');
       }
       function submitWordAtomically() {
         let name=newSubmittedPlayer();
@@ -228,7 +300,7 @@ service cloud.firestore {
       allow list: if false;
       allow create: if request.auth != null
         && roomId.matches('^[A-Za-z0-9]{20}$')
-        && request.resource.data.keys().hasOnly(['hostUid','hostPlayer','lastJoined','members','stage','round','startedAt','submitted','agree','disagree','createdAt','code'])
+        && request.resource.data.keys().hasOnly(['hostUid','hostPlayer','lastJoined','members','stage','round','startedAt','submitted','agree','disagree','createdAt','code','listed'])
         && request.resource.data.keys().hasAll(['hostUid','hostPlayer','lastJoined','members','stage','round','startedAt','submitted','agree','disagree','createdAt'])
         && validSameWordName(request.resource.data.hostPlayer)
         && request.resource.data.hostUid==request.auth.uid
@@ -247,7 +319,15 @@ service cloud.firestore {
             || (request.resource.data.code is string
                 && request.resource.data.code.matches('^[0-9]{3}$')
                 && getAfter(/databases/$(database)/documents/friendarcade_sameword_codes_v1/$(request.resource.data.code)).data.roomId == roomId
-                && getAfter(/databases/$(database)/documents/friendarcade_sameword_codes_v1/$(request.resource.data.code)).data.hostUid == request.auth.uid));
+                && getAfter(/databases/$(database)/documents/friendarcade_sameword_codes_v1/$(request.resource.data.code)).data.hostUid == request.auth.uid))
+        && (!('listed' in request.resource.data)
+            || (request.resource.data.listed is bool
+                && (request.resource.data.listed == false
+                    || (request.resource.data.code is string
+                        && getAfter(lobbyPath()).data.stage == 'lobby'
+                        && getAfter(lobbyPath()).data.memberCount == 1
+                        && getAfter(lobbyPath()).data.code == request.resource.data.code
+                        && getAfter(lobbyPath()).data.hostPlayer == request.resource.data.hostPlayer)));
 
       allow update: if request.auth != null
         && (joinRoom() || hostStart() || submitWordAtomically()

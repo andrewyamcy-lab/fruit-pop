@@ -2,6 +2,22 @@
 
 Game URL: https://andrewyamcy-lab.github.io/fruit-pop/arcade/sameword/
 
+
+## Live public room browser (Friend Arcade v1.2)
+
+- Open SameWord to see newly created **public waiting rooms** with the host's display name, three-digit join code, joined names and \`X/7\` capacity. Tap **一鍵加入房間** to join immediately as your selected player.
+- Friends who haven't chosen a player pick their name first; the selected room is remembered during that step and joined automatically.
+- Only rooms created in the last **six hours**, in the **lobby** stage and with fewer than seven members, appear in the list. This is a freshness filter, **not proof that the host is online**.
+- When the host starts, the public directory record changes to \`started\` atomically with the real room, and the entry disappears from the list.
+- The creator can uncheck **顯示喺公開房間列表** to make an invite/code-only room.
+- A separate \`friendarcade_sameword_lobbies_v1\` collection contains **public summaries only**. It never contains members' Firebase UIDs or unrevealed answers. It is updated atomically with the underlying room to avoid an out-of-date public player count.
+- The client reads at most 30 recent summaries using \`orderBy(createdAt, desc)\` with a real-time listener. Firebase security rules restrict the query limit; invalid or old entries are hidden in the UI.
+- Room codes, existing links and the 30-second word/consensus gameplay remain unchanged.
+
+**Required setup**: Publish the latest entire \`firestore.rules\` file in Firebase Console. The lobby directory cannot operate with the previous rule version. Check Firebase Anonymous Authentication is still enabled.
+
+**Limitations**: The seven displayed names are self-selected without verified identity. Any anonymous visitor can browse the public lobby cards. An opened public lobby does not confirm a host is currently online; true online presence would require Realtime Database/Cloud Functions. No automatic deletion of old room data is implemented, though old entries are hidden from the UI.
+
 ## Features
 - Create a room and invite 1–6 other friends by link or a **unique 3-digit room code** (e.g. 007).
 - New rooms keep an internal 20-character document ID while offering a short three-digit code through the `friendarcade_sameword_codes_v1` index. Firestore transactions claim the code and room atomically, preventing duplicates.
