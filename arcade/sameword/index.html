@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#edebfc"><meta name="apple-mobile-web-app-title" content="Friend Arcade">
+<meta name="description" content="SameWord 七人默契遊戲：30 秒限時、同步揭曉、同義共識投票，保留每輪答案。">
+<link rel="icon" href="../icon-192.png"><link rel="apple-touch-icon" href="../icon-192.png">
+<title>SameWord｜七人默契挑戰 · Friend Arcade</title>
+<style>
+:root{color-scheme:light;--ink:#302847;--sub:#877d9a;--purple:#7450b4;--line:#e9e3f3;--green:#238763;--warn:#af6f28;--card:#fff;--bg:#f7f5ff}
+*{box-sizing:border-box}body{margin:0;min-height:100svh;color:var(--ink);background:radial-gradient(ellipse at 10% 0%,#fde9f2,transparent 44%),radial-gradient(ellipse at 96% 8%,#e4dcff,transparent 48%),var(--bg);font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"SF Pro Rounded","PingFang HK",system-ui,sans-serif}
+button,input{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #9874cc;outline-offset:3px}[hidden]{display:none!important}
+.shell{width:min(990px,calc(100% - 30px));margin:auto;padding:20px 0 60px}.top{display:flex;gap:13px;justify-content:space-between;align-items:center}.back,.player{display:inline-flex;align-items:center;gap:7px;padding:10px 13px;border-radius:14px;background:#fff;border:1px solid #e9e0f5;font-weight:850;font-size:13px;box-shadow:0 6px 17px #46336313}.player{color:var(--purple)}
+header.hero{text-align:center;padding:29px 12px 25px}.eyebrow{font-size:11px;letter-spacing:1.8px;color:var(--purple);font-weight:900}h1{font-size:clamp(33px,5.5vw,53px);letter-spacing:-1.8px;margin:8px 0}h2,h3,p{margin:0}.hero p{font-size:13px;color:var(--sub);line-height:1.75}
+.card{border:1px solid var(--line);background:#fff;border-radius:23px;box-shadow:0 10px 32px #51417517;padding:22px;margin-bottom:15px}.card h2{font-size:21px;letter-spacing:-.5px;margin:0 0 9px}.sub{color:var(--sub);font-size:13px;line-height:1.65;margin-bottom:17px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:grid;gap:8px;margin:13px 0}.field label{font-size:12px;font-weight:900;color:#5c5070}.field input{width:100%;min-width:0;padding:13px;border:1px solid #d9cee9;border-radius:12px;background:#fefcff;color:var(--ink);font-size:16px}.field input:focus{outline:2px solid #ab8ade;outline-offset:1px}.primary,.secondary,.danger,.quiet{border-radius:13px;padding:12px 17px;min-height:45px;font-weight:900;font-size:13px}.primary{border:0;background:linear-gradient(120deg,#8459c1,#6646ac);color:#fff;box-shadow:0 5px 13px #7152ab2f}.secondary{border:1px solid #decfee;background:#f3ecff;color:#674a95}.danger{border:1px solid #e5c7c0;background:#fff1ed;color:#9c4e3e}.quiet{background:transparent;border:1px solid var(--line);color:#79688b}.primary:disabled,.secondary:disabled,.danger:disabled{opacity:.52;cursor:not-allowed}.wide{width:100%}.badge{font-size:11px;font-weight:900;background:#f0e7ff;color:#694ba4;border-radius:999px;padding:7px 11px}.badge.green{background:#e5f8ee;color:#207c59}.badge.amber{background:#fff2d9;color:#96641f}
+.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.name{border-radius:13px;background:#f9f6fd;border:1px solid #ede8f4;padding:11px;display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:13px;font-weight:900}.name small{font-size:10px;color:var(--sub);font-weight:750}.name.joined small{color:var(--green)}
+.status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.5}.dot{height:8px;width:8px;border-radius:50%;background:#deae64}.dot.online{background:#31ae80}
+.roomtop{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap}.roomcode{font-size:13px;color:#7a648e;font-weight:850}.roomcode strong{color:#5e428b;letter-spacing:1px}
+.timerbox{background:linear-gradient(125deg,#3b305c,#775ab1);border-radius:19px;padding:22px;text-align:center;color:#fff;margin:11px 0 19px}.timerbox strong{display:block;font-size:clamp(39px,9vw,65px);font-variant-numeric:tabular-nums;line-height:1.13;letter-spacing:-1px}.timerbox span{font-size:12px;color:#ebe0ff}.timertrack{height:9px;border-radius:99px;background:#ffffff38;overflow:hidden;margin-top:15px}.timerfill{height:100%;width:100%;background:#fdc6e3;border-radius:inherit;transition:width .18s linear}.timerbox.urgent{background:linear-gradient(130deg,#853e5d,#ae5967)}.timerbox.urgent .timerfill{background:#ffe49d}
+.roundlabel{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.roundlabel h2{margin:0}
+.words{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px}.word{border:1px solid #e8e3ef;border-radius:15px;padding:12px 13px;background:#faf8ff;min-height:69px}.word b{display:block;font-size:11px;color:#8c7fa1;margin-bottom:7px}.word span{font-size:17px;font-weight:950;overflow-wrap:anywhere}.word.missing{background:#f9f8fa}.word.missing span{font-size:13px;color:#afa5b7}.word.mine{border-color:#af92d9;background:#f5efff}
+.voting{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}.voting button{min-height:58px;font-size:15px}.notice{background:#f6f0ff;border:1px solid #ece3f8;border-radius:14px;padding:13px;font-size:12px;line-height:1.8;color:#695b85;margin:12px 0}.notice.warn{background:#fff8ed;border-color:#efe0c2;color:#8a6a45}
+.history{display:grid;gap:12px}.history-round{border:1px solid var(--line);background:#faf9fd;border-radius:15px;padding:14px}.history-round h3{font-size:14px;margin-bottom:12px}.history-round .words{grid-template-columns:repeat(auto-fit,minmax(106px,1fr))}.history-round .word{padding:9px;min-height:58px}.history-round .word span{font-size:13px}
+.results{text-align:center;padding:27px 17px;background:#f4fbf4;border:1px solid #cfe9d7;border-radius:19px}.results h2{color:#287b50;font-size:28px;margin-bottom:12px}.results p{font-size:14px;color:#50765e;line-height:1.7}
+.overlay{position:fixed;inset:0;background:#30254099;backdrop-filter:blur(4px);display:grid;place-items:center;padding:17px;z-index:50}.dialog{max-width:440px;width:100%;border-radius:24px;padding:23px;background:#fff}.dialog h2{font-size:21px;margin-bottom:9px}.dialog p{font-size:13px;line-height:1.7;color:var(--sub);margin-bottom:14px}.choicegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.choicegrid button{background:#f8f4ff;border:1px solid #e9dcf6;border-radius:13px;padding:13px;color:#574075;font-weight:900}.choicegrid button.chosen{border:2px solid #8863bf;background:#ecdeff}.toast{position:fixed;left:50%;bottom:23px;transform:translateX(-50%);z-index:70;border-radius:13px;background:#34294d;color:#fff;box-shadow:0 9px 30px #231b3630;padding:12px 17px;font-size:13px;max-width:calc(100% - 26px);line-height:1.5}.muted{font-size:12px;color:var(--sub);line-height:1.7}.footer{padding:15px 0;text-align:center;font-size:10px;color:#a59ab1;letter-spacing:.8px}
+@media(max-width:650px){.shell{width:calc(100% - 20px);padding-top:11px}.grid{grid-template-columns:1fr}.card{padding:17px;border-radius:19px}.hero{padding:20px 5px 19px!important}.names{grid-template-columns:repeat(2,minmax(0,1fr))}.voting button{padding:10px 7px;font-size:13px}.word{min-height:63px}.timerbox{padding:18px}.roomtop{gap:8px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="top"><a class="back" href="../">← Friend Arcade</a><button id="playerButton" class="player" type="button">👤 <span id="playerName">選擇玩家</span> ⌄</button></div>
+<header class="hero"><div class="eyebrow">SEVEN FRIENDS · ONE WORD</div><h1>🧠 SameWord</h1><p>每人 30 秒諗一個詞語 · 一齊判斷意思係咪相同 · 睇住歷史答案繼續下一輪</p></header>
+<div class="status" id="connectionStatus"><i class="dot" id="connectionDot"></i><span id="connectionMessage">正在連接 Firebase…</span></div>
+<section class="grid" id="entryView">
+ <div class="card"><h2>✨ 建立新房間</h2><p class="sub">由你做房主，邀請 2–7 位朋友加入。毋須註冊或輸入密碼。</p><button class="primary wide" id="createRoom" disabled>＋ 建立 SameWord 房間</button></div>
+ <div class="card"><h2>🔗 加入朋友房間</h2><p class="sub">輸入朋友分享嘅房間代碼，或者直接開啟邀請連結。</p><form id="joinForm"><div class="field"><label for="roomCode">房間代碼（20 字元）</label><input id="roomCode" type="text" maxlength="20" placeholder="貼上房間代碼" autocomplete="off" spellcheck="false" autocapitalize="off" required></div><button class="secondary wide" id="joinRoom" type="submit" disabled>加入房間 →</button></form></div>
+</section>
+<div id="roomView" hidden>
+ <section class="card">
+ <div class="roomtop"><div><div class="eyebrow">SAMEWORD ROOM</div><div class="roomcode">房間代碼：<strong id="displayRoomCode"></strong></div></div><div class="row"><span class="badge" id="stageBadge">準備中</span><button class="secondary" id="shareRoom" type="button">🔗 分享邀請</button><button class="quiet" id="leaveRoom" type="button">離開頁面</button></div></div>
+ <section id="lobby" hidden><h2>👥 等候朋友加入</h2><p class="sub">房主可以喺 2–7 人加入後開始。遊戲中途唔會新增玩家。</p><div class="names" id="lobbyNames"></div><div class="notice">⏱️ 每人每輪同時開始 30 秒倒數；全部交齊就會提早揭曉。</div><button id="joinSelected" class="secondary wide" type="button" hidden style="margin:12px 0">＋ 以目前玩家名稱加入房間</button><button id="startRoom" class="primary wide" disabled>▶ 開始遊戲（至少 2 人）</button></section>
+ <section id="inputStage" hidden><div class="roundlabel"><h2 id="roundTitle">第 1 輪 · 輸入詞語</h2><span class="badge" id="submittedBadge">0/7 已提交</span></div>
+   <div class="timerbox" id="timerBox"><span>剩餘時間</span><strong id="countdown" aria-live="off">00:30</strong><div class="timertrack"><div class="timerfill" id="timerFill"></div></div></div>
+   <form id="answerForm"><div class="field"><label for="answerWord">你嘅詞語</label><input id="answerWord" type="text" maxlength="40" placeholder="例如：海洋" autocomplete="off" autocapitalize="off" spellcheck="false" required></div><button id="submitAnswer" class="primary wide" disabled type="submit">提交答案</button></form>
+   <p id="answerHint" class="notice">提交後不能修改，其他人只會見到提交人數。</p>
+ </section>
+ <section id="reviewStage" hidden><div class="roundlabel"><h2 id="reviewTitle">第 1 輪 · 答案揭曉</h2><span class="badge green" id="reviewBadge">等待投票</span></div>
+   <p class="sub">你覺得大家輸入嘅詞語可以算係意思相同嗎？全員同意先勝出。</p>
+   <div id="currentWords" class="words"></div>
+   <div id="voteArea"><div class="voting"><button class="primary" id="agreeButton">✓ 同意 · 意思相同</button><button class="danger" id="disagreeButton">✕ 不同意 · 繼續玩</button></div><p id="voteStatus" class="notice">等待大家投票…</p></div>
+ </section>
+ <section id="betweenStage" hidden><h2>🔄 下一輪準備中</h2><p class="sub">今輪未達成共識，大家可以參考舊詞語，繼續聯想。</p><p id="transitionStatus" class="notice">即將開始新嘅 30 秒回合…</p></section>
+ <section id="finishedStage" class="results" hidden><h2>🎉 全員默契成功！</h2><p id="finishedMessage"></p><p style="margin-top:14px">🏆 Good Teamwork! 你哋終於諗到意思相同嘅詞語。</p></section>
+ </section>
+ <section class="card" id="historyPanel" hidden><h2>📜 歷史答案</h2><p class="sub">進入新一輪仍然可以睇返之前每位朋友寫過嘅詞語。</p><div id="historyList" class="history"></div></section>
+</div>
+<div class="footer">FRIEND ARCADE ✦ SAMEWORD · 無需手動登入 · 2–7 人</div>
+</div>
+<div class="overlay" id="picker" hidden role="dialog" aria-modal="true" aria-labelledby="pickerTitle"><div class="dialog"><h2 id="pickerTitle">你係邊位玩家？👋</h2><p>選擇名字後就可以建立或加入房間；同一間房一個名字只可以由一部裝置使用。</p><div id="choices" class="choicegrid"></div><button id="closePicker" class="secondary wide" style="margin-top:13px">關閉</button></div></div>
+<div id="toast" class="toast" hidden role="status"></div>
+<script src="../firebase-config.js"></script><script src="./core.js"></script><script src="./app.js" defer></script>
+</body></html>

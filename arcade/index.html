@@ -57,6 +57,7 @@ h1,h2,h3,p{margin:0}
 .visual-fish{background:linear-gradient(150deg,#baf0ed,#61bdca 62%,#227c9b);color:#fff}
 .visual-calendar{background:linear-gradient(140deg,#e9d9ff,#f6dbed 60%,#f8c9c0);color:#fff}
 .visual-villain{background:linear-gradient(145deg,#fae4ba,#e8b27a 67%,#b57f61);color:#784430}
+.visual-sameword{background:linear-gradient(145deg,#e5d9ff,#bba3ee 58%,#8b74d2);color:#46306f}
 .game-btn{display:block;text-align:center}
 .game-visual::after{content:"✦";position:absolute;right:15px;top:9px;color:#fff;font-size:25px}
 .game-card h3{font-size:16px;letter-spacing:-.3px;margin:1px 1px 0}
@@ -181,7 +182,7 @@ h1,h2,h3,p{margin:0}
 </div>
 <div class="stat-grid">
  <div class="stat"><b>7</b><span>固定朋友玩家</span></div>
- <div class="stat"><b>4</b><span>已推出遊戲與功能</span></div>
+ <div class="stat"><b>5</b><span>已推出遊戲與功能</span></div>
  <div class="stat"><b id="yourBest">—</b><span>你的 Fruit Pop 最高分</span></div>
 </div>
 <div class="dashboard-grid">
@@ -202,6 +203,7 @@ h1,h2,h3,p{margin:0}
 <article class="game-card"><div class="game-visual visual-fish" aria-hidden="true">🐠 🐟</div><span class="tag live">新功能 · 現正開放</span><h3>Aquarium</h3><p>7 條 Fruit Pop 人像小魚自由游動，可以餵魚同切換日夜模式。</p><a class="game-btn" href="./aquarium/">進入水族箱 →</a></article>
 <article class="game-card"><div class="game-visual visual-calendar" aria-hidden="true">📅</div><span class="tag live">新功能 · 已推出</span><h3>Gatherings</h3><p>七位朋友揀得閒日子，自動搵出 7/7 都有空嘅聚會日期。</p><a class="game-btn" href="./gatherings/">安排聚會 →</a></article>
 <article class="game-card"><div class="game-visual visual-villain" aria-hidden="true">🩴 🧧</div><span class="tag live">港式新遊戲 · 已推出</span><h3>打小人</h3><p>寫上小人名字，拍打 10 次，打走煩惱攞好運祝福。</p><a class="game-btn" href="./da-siu-yan/">開始打小人 →</a></article>
+<article class="game-card"><div class="game-visual visual-sameword" aria-hidden="true">🧠 💬</div><span class="tag live">多人遊戲 · 新推出</span><h3>SameWord</h3><p>2–7 人即時默契挑戰，30 秒答題、投票同睇歷史詞語。</p><a class="game-btn" href="./sameword/">建立房間 →</a></article>
 <article class="game-card"><div class="game-visual visual-guess" aria-hidden="true">🧠</div><span class="tag">即將推出</span><h3>Guess Who?</h3><p>睇相估朋友，考考你哋有幾熟。</p><button class="game-btn soon" disabled>籌備中</button></article>
 <article class="game-card"><div class="game-visual visual-memory" aria-hidden="true">🃏</div><span class="tag">即將推出</span><h3>Memory Match</h3><p>朋友人像翻牌配對，鬥快又鬥記性。</p><button class="game-btn soon" disabled>籌備中</button></article>
 </div>
@@ -215,6 +217,7 @@ h1,h2,h3,p{margin:0}
 <article class="game-card"><div class="game-visual visual-fish" aria-hidden="true">🐠 🐟</div><span class="tag live">休閒功能 · 已推出</span><h3>Aquarium</h3><p>7 條人像魚分別用第 1–7 級照片，輕觸餵魚同切換日夜模式。</p><a class="game-btn" href="./aquarium/">開啟水族箱 →</a></article>
 <article class="game-card"><div class="game-visual visual-calendar" aria-hidden="true">📅</div><span class="tag live">聚會管理 · 已推出</span><h3>Gatherings</h3><p>建立聚會、選擇月份、共享可出席日期，查看七人一致嘅日子。</p><a class="game-btn" href="./gatherings/">開啟聚會日曆 →</a></article>
 <article class="game-card"><div class="game-visual visual-villain" aria-hidden="true">🩴 🧧</div><span class="tag live">解壓小遊戲 · 已推出</span><h3>打小人</h3><p>自訂小人紙姓名，拖鞋動畫、音效、拍打 10 下領好運祝福。</p><a class="game-btn" href="./da-siu-yan/">開始遊戲 →</a></article>
+<article class="game-card"><div class="game-visual visual-sameword" aria-hidden="true">🧠 💬</div><span class="tag live">合作挑戰 · 已推出</span><h3>SameWord</h3><p>每輪同步 30 秒輸入詞語，同時揭曉並投票，直到大家達成共識。</p><a class="game-btn" href="./sameword/">開始 SameWord →</a></article>
 <article class="game-card"><div class="game-visual visual-guess" aria-hidden="true">🧠</div><span class="tag">即將推出</span><h3>Guess Who?</h3><p>使用朋友照片嘅猜謎遊戲，仲未正式推出。</p><button class="game-btn soon" disabled>敬請期待</button></article>
 <article class="game-card"><div class="game-visual visual-memory" aria-hidden="true">🃏</div><span class="tag">即將推出</span><h3>Memory Match</h3><p>使用朋友照片嘅記憶配對遊戲，仲未正式推出。</p><button class="game-btn soon" disabled>敬請期待</button></article>
 </div>
@@ -230,7 +233,7 @@ h1,h2,h3,p{margin:0}
 <div class="panel"><h3>👤 玩家身份</h3><p id="identityDescription">你可以喺呢部裝置揀一位玩家，進入 Fruit Pop 時自動沿用相同名稱。</p><div class="settings-actions"><button type="button" class="secondary" id="changePlayer">選擇／切換玩家</button><button type="button" class="secondary" id="refreshScores">重新載入排行榜</button></div></div>
 <div class="headline"><h2>✨ 將來可以加入</h2></div>
 <div class="feature-list"><div class="future">📅 <b>每日挑戰</b><span>七位朋友用同一個每日題目互相比拼。</span></div><div class="future">🎖️ <b>成就紀錄</b><span>記錄每款遊戲嘅解鎖成就。</span></div><div class="future">📊 <b>個人戰績</b><span>集中睇自己各款遊戲嘅最高分。</span></div><div class="future">🗳️ <b>朋友投票</b><span>之後可以擴充到遊戲以外嘅功能。</span></div></div>
-<div class="notice">🛠️ <span>Friend Arcade v2.0 · 繁體中文 · 遊戲及分數以 Firebase 為資料來源，未有推出嘅功能會清楚標示。</span></div>
+<div class="notice">🛠️ <span>Friend Arcade v2.1 · 繁體中文 · 遊戲及分數以 Firebase 為資料來源，未有推出嘅功能會清楚標示。</span></div>
 </section>
 </main>
 <div class="footnote">MADE FOR FRIENDS ✦ FRIEND ARCADE</div>
