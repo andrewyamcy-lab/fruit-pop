@@ -437,5 +437,283 @@ service cloud.firestore {
       }
     }
 
+    // Draw & Guess: seven-person private-code rooms.
+    // Anonymous Firebase UID protects each participant's slot, but is not
+    // proof of real identity. Artists arbitrate guesses: casual play only.
+    function validDrawPlayer(name) {
+      return name in ['ada','andrew','esther','jenny','rain','tom','yaki'];
+    }
+
+    match /friendarcade_drawguess_rooms_v1/{code} {
+      function changed() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+      function isHost() {
+        return request.auth != null && resource.data.ownerUid == request.auth.uid;
+      }
+      function isArtist() {
+        return request.auth != null
+          && resource.data.artistUid == request.auth.uid
+          && resource.data.members.get(resource.data.artistId,'') == request.auth.uid;
+      }
+      function newMemberJoin() {
+        let n = request.resource.data.lastJoined;
+        let delta = request.resource.data.members.diff(resource.data.members);
+        return resource.data.phase == 'lobby'
+          && changed().hasOnly(['members','lastJoined'])
+          && changed().size() == 2
+          && validDrawPlayer(n)
+          && !(n in resource.data.members)
+          && !resource.data.members.values().hasAny([request.auth.uid])
+          && request.resource.data.members is map
+          && request.resource.data.members.keys().hasOnly(['ada','andrew','esther','jenny','rain','tom','yaki'])
+          && request.resource.data.members.size() == resource.data.members.size() + 1
+          && request.resource.data.members.size() <= 7
+          && delta.addedKeys().hasOnly([n])
+          && delta.addedKeys().size() == 1
+          && delta.changedKeys().size() == 0
+          && delta.removedKeys().size() == 0
+          && request.resource.data.members[n] == request.auth.uid;
+      }
+      function hostBegin() {
+        return isHost()
+          && resource.data.phase == 'lobby'
+          && resource.data.members.size() >= 2
+          && resource.data.members.size() <= 7
+          && changed().hasOnly(['phase','turn','roster','artistId','artistUid','scores','solved'])
+          && request.resource.data.phase == 'choosing'
+          && request.resource.data.turn == 0
+          && request.resource.data.roster is list
+          && request.resource.data.roster.size() == resource.data.members.size()
+          && request.resource.data.roster.toSet().size() == request.resource.data.roster.size()
+          && request.resource.data.roster.hasAll(resource.data.members.keys())
+          && request.resource.data.artistId == request.resource.data.roster[0]
+          && request.resource.data.artistUid == resource.data.members[request.resource.data.artistId]
+          && request.resource.data.scores is map
+          && request.resource.data.scores.keys().hasAll(request.resource.data.roster)
+          && request.resource.data.scores.keys().size() == request.resource.data.roster.size()
+          && request.resource.data.solved == {};
+      }
+      function artistBegin() {
+        return isArtist()
+          && resource.data.phase == 'choosing'
+          && changed().hasOnly(['phase','startedAt','hintCategory','hintLength','options','revealedAnswer','solved','boardVersion'])
+          && request.resource.data.phase == 'drawing'
+          && request.resource.data.startedAt == request.time
+          && request.resource.data.hintCategory is string
+          && request.resource.data.hintCategory.size() <= 30
+          && request.resource.data.hintLength is int
+          && request.resource.data.hintLength >= 1
+          && request.resource.data.hintLength <= 20
+          && request.resource.data.options == []
+          && request.resource.data.solved == {}
+          && request.resource.data.revealedAnswer == ''
+          && request.resource.data.boardVersion == 0;
+      }
+      function artistOptions() {
+        return isArtist()
+          && resource.data.phase == 'drawing'
+          && resource.data.startedAt is timestamp
+          && request.time >= resource.data.startedAt + duration.value(60,'s')
+          && request.time < resource.data.startedAt + duration.value(90,'s')
+          && resource.data.options == []
+          && changed().hasOnly(['options'])
+          && request.resource.data.options is list
+          && request.resource.data.options.size() == 4;
+      }
+      function artistScore() {
+        return isArtist()
+          && resource.data.phase == 'drawing'
+          && changed().hasOnly(['scores','solved'])
+          && request.resource.data.scores is map
+          && request.resource.data.scores.keys().hasOnly(resource.data.roster)
+          && request.resource.data.scores.keys().size() == resource.data.roster.size()
+          && request.resource.data.solved is map
+          && request.resource.data.solved.keys().hasOnly(resource.data.roster)
+          && request.resource.data.solved.size() <= resource.data.roster.size() - 1
+          && request.resource.data.solved.keys().hasAll(resource.data.solved.keys());
+      }
+      function artistClear() {
+        return isArtist() && resource.data.phase == 'drawing'
+          && changed().hasOnly(['boardVersion'])
+          && request.resource.data.boardVersion == resource.data.boardVersion + 1
+          && request.resource.data.boardVersion <= 100;
+      }
+      function finishDrawing() {
+        return resource.data.phase == 'drawing'
+          && changed().hasOnly(['phase','revealedAnswer'])
+          && request.resource.data.phase == 'result'
+          && ((isArtist()
+                && request.resource.data.revealedAnswer is string
+                && request.resource.data.revealedAnswer.size() <= 30)
+              || (isHost()
+                && resource.data.startedAt is timestamp
+                && request.time >= resource.data.startedAt + duration.value(100,'s')
+                && request.resource.data.revealedAnswer == '（畫家離線，題目略過）'));
+      }
+      function hostAdvance() {
+        return isHost() && resource.data.phase == 'result'
+          && resource.data.turn + 1 < resource.data.roster.size()
+          && changed().hasOnly(['phase','turn','artistId','artistUid','startedAt','hintCategory','hintLength','options','boardVersion','solved','revealedAnswer'])
+          && request.resource.data.phase == 'choosing'
+          && request.resource.data.turn == resource.data.turn + 1
+          && request.resource.data.artistId == resource.data.roster[request.resource.data.turn]
+          && request.resource.data.artistUid == resource.data.members[request.resource.data.artistId]
+          && request.resource.data.startedAt == null
+          && request.resource.data.hintCategory == ''
+          && request.resource.data.hintLength == 0
+          && request.resource.data.options == []
+          && request.resource.data.boardVersion == 0
+          && request.resource.data.solved == {}
+          && request.resource.data.revealedAnswer == '';
+      }
+      function hostFinish() {
+        return isHost() && resource.data.phase == 'result'
+          && resource.data.turn + 1 == resource.data.roster.size()
+          && changed().hasOnly(['phase'])
+          && request.resource.data.phase == 'finished';
+      }
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null
+        && code.matches('^[A-HJ-NP-Z2-9]{6}$')
+        && request.resource.data.keys().hasOnly(['ownerUid','hostPlayer','members','lastJoined','roster','phase','turn','artistId','artistUid','scores','solved','startedAt','hintCategory','hintLength','options','boardVersion','revealedAnswer','createdAt'])
+        && request.resource.data.keys().size() == 18
+        && validDrawPlayer(request.resource.data.hostPlayer)
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.members is map
+        && request.resource.data.members.keys().size() == 1
+        && request.resource.data.members[request.resource.data.hostPlayer] == request.auth.uid
+        && request.resource.data.lastJoined == request.resource.data.hostPlayer
+        && request.resource.data.roster == []
+        && request.resource.data.phase == 'lobby'
+        && request.resource.data.turn == -1
+        && request.resource.data.artistId == ''
+        && request.resource.data.artistUid == ''
+        && request.resource.data.scores[request.resource.data.hostPlayer] == 0
+        && request.resource.data.solved == {}
+        && request.resource.data.startedAt == null
+        && request.resource.data.hintCategory == ''
+        && request.resource.data.hintLength == 0
+        && request.resource.data.options == []
+        && request.resource.data.boardVersion == 0
+        && request.resource.data.revealedAnswer == ''
+        && request.resource.data.createdAt == request.time;
+      allow update: if request.auth != null && (
+        newMemberJoin() || hostBegin() || artistBegin() || artistOptions() ||
+        artistScore() || artistClear() || finishDrawing() || hostAdvance() || hostFinish()
+      );
+      allow delete: if false;
+
+      match /rounds/{roundId} {
+        function room() {
+          return get(/databases/$(database)/documents/friendarcade_drawguess_rooms_v1/$(code)).data;
+        }
+        function participant() {
+          return request.auth != null && room().members.values().hasAny([request.auth.uid]);
+        }
+        function artist() {
+          return participant() && room().artistUid == request.auth.uid
+            && room().turn == int(roundId);
+        }
+        function guessing(playerId) {
+          return participant()
+            && validDrawPlayer(playerId)
+            && room().turn == int(roundId)
+            && room().phase == 'drawing'
+            && room().startedAt is timestamp
+            && request.time <= room().startedAt + duration.value(90,'s')
+            && room().artistUid != request.auth.uid
+            && room().members.get(playerId,'') == request.auth.uid
+            && !(playerId in room().solved);
+        }
+        match /secret/{secretId} {
+          allow get: if artist();
+          allow list: if false;
+          allow create: if secretId == 'current'
+            && artist() && room().phase == 'choosing'
+            && request.resource.data.keys().hasOnly(['uid','answer','answerId','options'])
+            && request.resource.data.keys().size() == 4
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.answer is string
+            && request.resource.data.answer.size() >= 1
+            && request.resource.data.answer.size() <= 30
+            && request.resource.data.answerId is int
+            && request.resource.data.answerId >= 0
+            && request.resource.data.answerId <= 59
+            && request.resource.data.options is list
+            && request.resource.data.options.size() == 4;
+          allow update, delete: if false;
+        }
+        match /strokes/{strokeId} {
+          allow get, list: if participant();
+          allow create: if artist() && room().phase == 'drawing'
+            && request.time <= room().startedAt + duration.value(90,'s')
+            && request.resource.data.keys().hasOnly(['uid','boardVersion','points','color','width','seq','gesture','createdAt'])
+            && request.resource.data.keys().size() == 8
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.boardVersion == room().boardVersion
+            && request.resource.data.points is list
+            && request.resource.data.points.size() >= 2
+            && request.resource.data.points.size() <= 16
+            && request.resource.data.color in ['#232332','#e94f77','#317cc7','#30916f','#edab37','#ffffff']
+            && request.resource.data.width is int
+            && request.resource.data.width >= 3
+            && request.resource.data.width <= 20
+            && request.resource.data.seq is int
+            && request.resource.data.seq >= 1
+            && request.resource.data.seq <= 20000
+            && request.resource.data.gesture is int
+            && request.resource.data.gesture >= 1
+            && request.resource.data.createdAt == request.time;
+          allow update, delete: if false;
+        }
+        match /guesses/{guessId} {
+          allow get: if request.auth != null &&
+            (resource.data.uid == request.auth.uid || artist());
+          allow list: if artist();
+          allow create: if guessing(request.resource.data.playerId)
+            && request.resource.data.keys().hasOnly(['uid','playerId','text','mode','verdict','createdAt'])
+            && request.resource.data.keys().size() == 6
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.mode == 'free'
+            && request.resource.data.text is string
+            && request.resource.data.text.size() >= 1
+            && request.resource.data.text.size() <= 30
+            && request.resource.data.verdict == 'pending'
+            && request.resource.data.createdAt == request.time;
+          allow update: if artist() && resource.data.verdict == 'pending'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verdict'])
+            && request.resource.data.verdict in ['correct','wrong']
+            && (request.resource.data.verdict != 'correct'
+              || (resource.data.playerId in room().solved));
+          allow delete: if false;
+        }
+        match /choices/{playerId} {
+          allow get: if request.auth != null &&
+            (resource.data.uid == request.auth.uid || artist());
+          allow list: if artist();
+          allow create: if guessing(playerId)
+            && room().startedAt is timestamp
+            && request.time >= room().startedAt + duration.value(60,'s')
+            && room().options.size() == 4
+            && request.resource.data.keys().hasOnly(['uid','playerId','text','mode','verdict','createdAt'])
+            && request.resource.data.keys().size() == 6
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.playerId == playerId
+            && request.resource.data.mode == 'choice'
+            && request.resource.data.text in room().options
+            && request.resource.data.verdict == 'pending'
+            && request.resource.data.createdAt == request.time;
+          allow update: if artist() && resource.data.verdict == 'pending'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verdict'])
+            && request.resource.data.verdict in ['correct','wrong']
+            && (request.resource.data.verdict != 'correct'
+              || (resource.data.playerId in room().solved));
+          allow delete: if false;
+        }
+      }
+    }
+
   }
 }
