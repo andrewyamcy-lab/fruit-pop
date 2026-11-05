@@ -327,7 +327,7 @@ service cloud.firestore {
                         && getAfter(lobbyPath()).data.stage == 'lobby'
                         && getAfter(lobbyPath()).data.memberCount == 1
                         && getAfter(lobbyPath()).data.code == request.resource.data.code
-                        && getAfter(lobbyPath()).data.hostPlayer == request.resource.data.hostPlayer)));
+                        && getAfter(lobbyPath()).data.hostPlayer == request.resource.data.hostPlayer))));
 
       allow update: if request.auth != null
         && (joinRoom() || hostStart() || submitWordAtomically()
