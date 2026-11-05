@@ -1,10 +1,11 @@
 const Core=window.DrawGuessCore;
 const CODES="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const ROOMS="friendarcade_drawguess_rooms_v1";
+const ROOMS="friendarcade_drawguess_rooms_v1", LOBBIES="friendarcade_drawguess_lobbies_v1";
 const $=id=>document.getElementById(id);
 const state={
  sdk:null,db:null,uid:null,player:"",room:null,ref:null,code:"",
- unsubRoom:null,unsubStrokes:null,unsubGuesses:null,unsubChoices:null,
+ unsubRoom:null,unsubLobbies:null,unsubStrokes:null,unsubGuesses:null,unsubChoices:null,
+ lobbyState:"loading",availableLobbies:[],lastHeartbeatAt:0,
  strokeKey:"",judgeKey:"",secret:null,loadingSecret:false,
  segments:[],pointer:null,strokePoints:[],gesture:0,seq:0,lastFlush:0,
  brush:"#232332",size:6,choiceUsed:false,
@@ -17,6 +18,79 @@ function err(error,message){console.warn(message,error);say("⚠️ "+message);n
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const named=id=>Core.LABELS[id]||id||"朋友";
 function roomLink(code){const url=new URL(location.href);url.searchParams.set("room",code);return url.href;}
+
+function lobbyRef(code){return state.sdk.doc(state.db,LOBBIES,code);}
+function isJoinableLobby(lobby,now=Date.now()){
+ const latest=lobby?.hostSeenAt?.toMillis?.()??lobby?.createdAt?.toMillis?.();
+ return lobby?.stage==="lobby"&&Core.validCode(lobby.code)
+  &&Core.PLAYERS.includes(lobby.hostPlayer)
+  &&Number.isInteger(lobby.memberCount)&&lobby.memberCount>=1&&lobby.memberCount<7
+  &&typeof latest==="number"&&Number.isFinite(latest)
+  &&latest<=now+60000&&now-latest<=10*60*1000;
+}
+function renderAvailable(){
+ const host=$("availableRooms");host.replaceChildren();
+ if(state.lobbyState==="loading"||!state.db){
+  $("availableCount").textContent="連線中…";
+  host.appendChild(element("p","正在讀取朋友開放中嘅房間…","available-empty"));return;
+ }
+ if(state.lobbyState==="error"){
+  $("availableCount").textContent="暫時無法載入";
+  host.appendChild(element("p","⚠️ 暫時讀唔到公開房間。請先發布新 Firebase Rules，或者輸入房號加入。","available-empty"));return;
+ }
+ const items=state.availableLobbies.filter(item=>isJoinableLobby(item))
+  .sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0))
+  .slice(0,8);
+ $("availableCount").textContent=items.length+" 間開放中";
+ if(!items.length){
+  host.appendChild(element("p","暫時未有可以加入嘅房間。你可以建立新房間，或者輸入朋友嘅六位房號。","available-empty"));return;
+ }
+ for(const item of items){
+  const row=element("div",undefined,"available-room");
+  const header=element("div",undefined,"horizontal");
+  const info=element("div"),title=element("strong","🎨 "+named(item.hostPlayer)+" 嘅房間");
+  const meta=element("small","房號 "+item.code+" · 等待開始");
+  info.append(title,meta);
+  header.append(info,element("span",item.memberCount+" / 7","badge success"));
+  const members=element("p","已加入："+(Array.isArray(item.memberNames)?item.memberNames.map(named).join("、"):"朋友"),"small");
+  const progress=element("div",undefined,"available-progress");
+  const fill=element("span");fill.style.width=Math.max(0,Math.min(100,item.memberCount/7*100))+"%";progress.appendChild(fill);
+  const button=element("button","一鍵加入房間 →","primary wide");
+  button.type="button";button.disabled=state.busy;
+  button.addEventListener("click",()=>{
+   if(!Core.PLAYERS.includes(selectedPlayer())){
+    alert("請先喺上方揀你嘅玩家名字，再按加入。");$("nameSelect").focus();return;
+   }
+   $("roomCodeInput").value=item.code;void joinRoom();
+  });
+  row.append(header,members,progress,button);host.appendChild(row);
+ }
+}
+function startLobbyFeed(){
+ if(state.unsubLobbies)state.unsubLobbies();
+ state.lobbyState="loading";renderAvailable();
+ // Only lobby summaries are queried: artist secrets and guesses are never listed.
+ const q=state.sdk.query(state.sdk.collection(state.db,LOBBIES),
+  state.sdk.where("stage","==","lobby"),state.sdk.limit(30));
+ state.unsubLobbies=state.sdk.onSnapshot(q,snapshot=>{
+  state.availableLobbies=snapshot.docs.map(doc=>({...doc.data(),code:doc.id}));
+  state.lobbyState="ready";renderAvailable();
+ },error=>{
+  console.warn("Draw & Guess room discovery unavailable",error);
+  state.availableLobbies=[];state.lobbyState="error";renderAvailable();
+ });
+}
+async function hostHeartbeat(){
+ if(!isHost()||state.room?.phase!=="lobby"||!state.db)return;
+ const current=Date.now();if(current-state.lastHeartbeatAt<40000)return;
+ state.lastHeartbeatAt=current;
+ try{
+  await state.sdk.updateDoc(lobbyRef(state.code),{hostSeenAt:state.sdk.serverTimestamp()});
+ }catch(e){
+  console.warn("Draw & Guess host presence could not refresh",e);
+ }
+}
+
 function randomCode(){
  const array=new Uint32Array(6);crypto.getRandomValues(array);
  return [...array].map(v=>CODES[v%CODES.length]).join("");
@@ -41,8 +115,8 @@ function action(label,handler,style="secondary",disabled=false){
  const b=element("button",label,style);b.type="button";b.disabled=disabled;
  b.addEventListener("click",()=>{Promise.resolve().then(handler).catch(e=>err(e,"操作失敗，請再試。"));});return b;
 }
-function showEntry(){ $("entry").hidden=false;$("gameLayout").hidden=true;}
-function showGame(){ $("entry").hidden=true;$("gameLayout").hidden=false;}
+function showEntry(){ $("entry").hidden=false;$("availableRoomsPanel").hidden=false;$("gameLayout").hidden=true;renderAvailable();}
+function showGame(){ $("entry").hidden=true;$("availableRoomsPanel").hidden=true;$("gameLayout").hidden=false;}
 function cleanSubs(){
  for(const key of ["unsubStrokes","unsubGuesses","unsubChoices"]){
   if(state[key]){state[key]();state[key]=null;}
@@ -57,16 +131,20 @@ async function createRoom(){
  state.busy=true;$("createRoom").disabled=true;
  try{
   for(let tries=0;tries<5;tries++){
-   const code=randomCode(),ref=state.sdk.doc(state.db,ROOMS,code);
+   const code=randomCode(),ref=state.sdk.doc(state.db,ROOMS,code),publicRef=lobbyRef(code);
    try{
     await state.sdk.runTransaction(state.db,async tx=>{
-     const snap=await tx.get(ref);if(snap.exists())throw new Error("CODE_COLLISION");
+     const [snap,publicSnap]=await Promise.all([tx.get(ref),tx.get(publicRef)]);
+     if(snap.exists()||publicSnap.exists())throw new Error("CODE_COLLISION");
+     const stamp=state.sdk.serverTimestamp();
      tx.set(ref,{ownerUid:state.uid,hostPlayer:p,members:{[p]:state.uid},lastJoined:p,
       roster:[],phase:"lobby",turn:-1,artistId:"",artistUid:"",scores:{[p]:0},solved:{},
       startedAt:null,hintCategory:"",hintLength:0,options:[],boardVersion:0,
-      revealedAnswer:"",createdAt:state.sdk.serverTimestamp()});
+      revealedAnswer:"",createdAt:stamp});
+     tx.set(publicRef,{code,hostPlayer:p,memberNames:[p],memberCount:1,stage:"lobby",
+       createdAt:stamp,hostSeenAt:stamp});
     });
-    savePlayer(p);subscribeRoom(code);return;
+    savePlayer(p);state.lastHeartbeatAt=Date.now();subscribeRoom(code);return;
    }catch(e){if(e.message==="CODE_COLLISION")continue;throw e;}
   }
   throw new Error("無法產生未使用嘅房號。");
@@ -82,13 +160,23 @@ async function joinRoom(){
  try{
   const ref=state.sdk.doc(state.db,ROOMS,code);
   await state.sdk.runTransaction(state.db,async tx=>{
-   const snap=await tx.get(ref);if(!snap.exists())throw new Error("房間不存在。");
+   const publicRef=lobbyRef(code);
+   const [snap,publicSnap]=await Promise.all([tx.get(ref),tx.get(publicRef)]);
+   if(!snap.exists())throw new Error("房間不存在。");
    const room=snap.data(),assigned=room.members?.[p];
    if(assigned===state.uid)return;
    if(assigned)throw new Error("呢個玩家名字已經被另一部裝置使用。");
    if(room.phase!=="lobby")throw new Error("遊戲已經開始，暫時唔可以新加入。");
    if(Object.keys(room.members||{}).length>=7)throw new Error("房間已滿。");
+   if(publicSnap.exists()&&publicSnap.data().stage!=="lobby")throw new Error("房間已經關閉，請揀其他房間。");
    tx.update(ref,{members:{...room.members,[p]:state.uid},lastJoined:p});
+   if(publicSnap.exists()){
+    const listed=publicSnap.data();
+    tx.update(publicRef,{
+     memberNames:[...(listed.memberNames||[]),p],
+     memberCount:(listed.memberCount||0)+1
+    });
+   }
   });
   savePlayer(p);subscribeRoom(code);
  }catch(e){err(e,e.message||"加入房間失敗");}
@@ -158,7 +246,11 @@ async function startRoom(){
  const roster=Object.keys(state.room.members).sort(),first=roster[0];
  if(roster.length<2)return;
  const scores=Object.fromEntries(roster.map(id=>[id,0]));
- await state.sdk.updateDoc(state.ref,{phase:"choosing",turn:0,roster,artistId:first,artistUid:state.room.members[first],scores,solved:{}});
+ const publicSnap=await state.sdk.getDoc(lobbyRef(state.code));
+ const batch=state.sdk.writeBatch(state.db);
+ batch.update(state.ref,{phase:"choosing",turn:0,roster,artistId:first,artistUid:state.room.members[first],scores,solved:{}});
+ if(publicSnap.exists())batch.update(lobbyRef(state.code),{stage:"started"});
+ await batch.commit();
 }
 let proposed=[];
 function openTopics(){
@@ -404,6 +496,8 @@ function renderFeed(){
 }
 let lastRenderKey="";
 function tick(){
+ if(!state.room)return;
+ if(state.room.phase==="lobby")void hostHeartbeat();
  const r=state.room;if(!r)return;
  if(r.phase==="drawing"){
   const seconds=timerLeft();$("clock").textContent=seconds+"s";
@@ -448,7 +542,7 @@ try{
 }catch(_){}
 async function connect(){
  const cfg=window.FRUITPOP_FIREBASE_CONFIG;
- if(!cfg?.apiKey){say("⚠️ 未設定 Firebase");return;}
+ if(!cfg?.apiKey){say("⚠️ 未設定 Firebase");state.lobbyState="error";renderAvailable();return;}
  try{
   const version="13.1.0";
   const [A,Auth,F]=await Promise.all([
@@ -462,9 +556,11 @@ async function connect(){
   say("🟢 Firebase 已連接");
   const code=new URLSearchParams(location.search).get("room")?.toUpperCase();
   if(Core.validCode(code))$("roomCodeInput").value=code;
-  showEntry();resetCanvas();
- }catch(e){err(e,"Firebase 無法連接，請確認匿名登入已啟用。");}
+  showEntry();resetCanvas();startLobbyFeed();
+ }catch(e){state.lobbyState="error";renderAvailable();err(e,"Firebase 無法連接，請確認匿名登入已啟用。");}
 }
-window.addEventListener("pagehide",()=>{state.unsubRoom?.();cleanSubs();});
-window.DrawGuessDebug={state,Core,tick,elapsed,renderCanvas,submitGuess};
-setInterval(tick,350);connect();
+window.addEventListener("pagehide",()=>{state.unsubRoom?.();state.unsubLobbies?.();cleanSubs();});
+window.DrawGuessDebug={state,Core,tick,elapsed,renderCanvas,submitGuess,renderAvailable,isJoinableLobby,startLobbyFeed};
+setInterval(tick,350);
+setInterval(()=>{if(!state.room&&state.lobbyState==="ready")renderAvailable();},30000);
+connect();
