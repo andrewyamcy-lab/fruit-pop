@@ -328,8 +328,8 @@ service cloud.firestore {
         return resource.data.stage=='review'
           && resource.data.voteStartedAt is timestamp
           && request.time<resource.data.voteStartedAt+duration.value(30,'s')
-          && resource.data.agree.size()<=resource.data.members.size()/2
-          && resource.data.disagree.size()<=resource.data.members.size()/2
+          && resource.data.agree.size() * 2 <= resource.data.members.size()
+          && resource.data.disagree.size() * 2 <= resource.data.members.size()
           && (yesChange||noChange)
           && votes.size()==before.size()+1
           && votes==before.concat([n])
@@ -339,9 +339,9 @@ service cloud.firestore {
       }
       function evaluateVotes() {
         let people=resource.data.members.size();
-        let threshold=people/2;
-        let yesWins=resource.data.agree.size()>threshold;
-        let noWins=resource.data.disagree.size()>threshold;
+        let threshold=people;
+        let yesWins=resource.data.agree.size() * 2 > threshold;
+        let noWins=resource.data.disagree.size() * 2 > threshold;
         let timeUp=resource.data.voteStartedAt is timestamp
           && request.time>=resource.data.voteStartedAt+duration.value(30,'s');
         return resource.data.stage=='review'
