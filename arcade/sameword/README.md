@@ -3,7 +3,10 @@
 Game URL: https://andrewyamcy-lab.github.io/fruit-pop/arcade/sameword/
 
 ## Features
-- Create a room and invite 1–6 other friends by link or 20-character room code.
+- Create a room and invite 1–6 other friends by link or a **unique 3-letter uppercase room code** (e.g. CAT).
+- New rooms keep an internal 20-character document ID while offering a short three-letter code through the `friendarcade_sameword_codes_v1` index. Firestore transactions claim the code and room atomically, preventing duplicates.
+- Older invitation links using 20-character room IDs still work, though those existing rooms do not automatically receive a short code.
+- **Important**: Three letters offer just 17,576 combinations. These codes are convenient join references, **not secret passwords**; do not enter sensitive words.
 - Fixed selectable players: Ada, Andrew, Esther, Jenny, Rain, Tom, Yaki.
 - One-time anonymous Firebase identity is maintained by the browser. No manual account login.
 - Only the room creator can start; 2–7 players required. Membership is frozen after start.
@@ -18,11 +21,12 @@ Game URL: https://andrewyamcy-lab.github.io/fruit-pop/arcade/sameword/
 
 **Pushing code to GitHub DOES NOT publish Firestore Security Rules to Firebase.**
 
-1. Open the complete root [firestore.rules](https://github.com/andrewyamcy-lab/fruit-pop/blob/main/firestore.rules) file.
-2. In [Firebase Console → Firestore Database → Rules](https://console.firebase.google.com/project/fruit-pop-d1649/firestore/databases/-default-/rules), replace the **entire existing rules text** with this file (it preserves Fruit Pop and Gatherings) and click Publish.
-3. Confirm Firebase → Authentication → Sign-in method → **Anonymous** is enabled.
-4. Open the game on two different phones or browsers, create a room on the first, use the invitation on the second, and confirm realtime join/submit/reveal/vote.
-5. Test the deadline with an intentional non-response and a rejected answer after 30 seconds.
+1. This update adds a `friendarcade_sameword_codes_v1` collection. Re-publish the full Firestore rules even if you already enabled the earlier SameWord rules.
+2. Open the complete root [firestore.rules](https://github.com/andrewyamcy-lab/fruit-pop/blob/main/firestore.rules) file.
+3. In [Firebase Console → Firestore Database → Rules](https://console.firebase.google.com/project/fruit-pop-d1649/firestore/databases/-default-/rules), replace the **entire existing rules text** with this file (it preserves Fruit Pop and Gatherings) and click Publish.
+4. Confirm Firebase → Authentication → Sign-in method → **Anonymous** is enabled.
+5. Open the game on two different phones or browsers, create a room on the first, use the invitation on the second, and confirm realtime join/submit/reveal/vote.
+6. Test the deadline with an intentional non-response and a rejected answer after 30 seconds.
 
 ## Security design and caveats
 - Never store the answer text on the public room document during the input phase.

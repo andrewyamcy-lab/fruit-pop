@@ -2,9 +2,9 @@
 "use strict";
 const C=window.SameWordCore;
 const $=id=>document.getElementById(id);
-const ROOMS="friendarcade_sameword_rooms_v1", STORAGE="friendarcade-player-v1";
+const ROOMS="friendarcade_sameword_rooms_v1", CODES="friendarcade_sameword_codes_v1", STORAGE="friendarcade-player-v1";
 const state={
- db:null,sdk:null,uid:null,roomId:null,room:null,ready:false,busy:false,
+ db:null,sdk:null,uid:null,roomId:null,roomCode:null,room:null,ready:false,busy:false,
  unsubscribe:null,answerKey:null,answers:new Map(),history:new Map(),
  roundLoading:false,lastAdvance:0,previousStage:"",historyRequest:new Set(),loadAttempts:new Map(),joined:false
 };
@@ -53,13 +53,16 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")$("picker").hidden=t
 txt("playerName",player?label(player):"選擇玩家");
 if(!player)$("picker").hidden=false;
 renderPicker();
-function setRoomRoute(id){
- const url=new URL(location.href);
- if(id)url.searchParams.set("room",id);else url.searchParams.delete("room");
+function setRoomRoute(id,code=null){
+ const url=new URL(location.href);url.searchParams.delete("room");url.searchParams.delete("code");
+ if(C.validCode(code))url.searchParams.set("code",code);
+ else if(id)url.searchParams.set("room",id);
  history.replaceState(null,"",url.pathname+url.search+url.hash);
 }
 function invitationLink(){
- const url=new URL(location.href);url.searchParams.set("room",state.roomId);
+ const url=new URL(location.href);url.searchParams.delete("room");url.searchParams.delete("code");
+ if(C.validCode(state.roomCode))url.searchParams.set("code",state.roomCode);
+ else url.searchParams.set("room",state.roomId);
  return url.toString();
 }
 async function share(){
@@ -74,24 +77,26 @@ async function share(){
 $("shareRoom").addEventListener("click",share);
 $("leaveRoom").addEventListener("click",()=>{
  if(state.unsubscribe)state.unsubscribe();
- state.unsubscribe=null;state.room=null;state.roomId=null;state.answers.clear();state.history.clear();
+ state.unsubscribe=null;state.room=null;state.roomId=null;state.roomCode=null;state.answers.clear();state.history.clear();
  state.answerKey=null;state.historyRequest.clear();state.loadAttempts.clear();setRoomRoute(null);render();
 });
-function attachRoom(id){
+function attachRoom(id,code=null){
  if(!C.validRoom(id)){info("房間代碼無效。");return;}
  if(!state.ready){info("Firebase 尚未連接。");return;}
  if(state.unsubscribe)state.unsubscribe();
- state.roomId=id;state.room=null;state.answers.clear();state.history.clear();
+ state.roomId=id;state.roomCode=C.validCode(code)?code:null;state.room=null;state.answers.clear();state.history.clear();
  state.answerKey=null;state.previousStage="";state.historyRequest.clear();
- setRoomRoute(id);render();
+ setRoomRoute(id,state.roomCode);render();
  state.unsubscribe=state.sdk.onSnapshot(roomRef(),snap=>{
   if(!snap.exists()){
    info("搵唔到呢個房間，請檢查邀請連結。");
    if(state.unsubscribe)state.unsubscribe();
-   state.unsubscribe=null;state.room=null;state.roomId=null;setRoomRoute(null);render();return;
+   state.unsubscribe=null;state.room=null;state.roomId=null;state.roomCode=null;setRoomRoute(null);render();return;
   }
   const prior=state.room;
   state.room=snap.data();
+  state.roomCode=C.validCode(state.room.code)?state.room.code:null;
+  setRoomRoute(state.roomId,state.roomCode);
   const key=String(state.room.round)+":"+state.room.stage;
   if(key!==state.previousStage){
    state.previousStage=key;
@@ -114,22 +119,53 @@ async function createRoom(){
  state.busy=true;render();
  try{
   const ref=state.sdk.doc(state.sdk.collection(state.db,ROOMS));
-  await state.sdk.setDoc(ref,{
-   hostUid:state.uid,hostPlayer:player,lastJoined:player,
-   members:{[player]:state.uid},stage:"lobby",round:0,startedAt:null,
-   submitted:[],agree:[],disagree:[],createdAt:state.sdk.serverTimestamp()
-  });
-  attachRoom(ref.id);info("✅ 房間已建立，分享連結俾朋友加入！");
+  let code=null;
+  // Atomically reserve one three-letter alias and its underlying room.
+  for(let attempt=0;attempt<12;attempt++){
+   const bytes=new Uint8Array(3);crypto.getRandomValues(bytes);
+   const candidate=C.generateCode(bytes);
+   const alias=state.sdk.doc(state.db,CODES,candidate);
+   try{
+    await state.sdk.runTransaction(state.db,async tx=>{
+     const existing=await tx.get(alias);
+     if(existing.exists())throw new Error("room-code-taken");
+     const stamp=state.sdk.serverTimestamp();
+     tx.set(ref,{hostUid:state.uid,hostPlayer:player,lastJoined:player,
+       code:candidate,members:{[player]:state.uid},stage:"lobby",
+       round:0,startedAt:null,submitted:[],agree:[],disagree:[],createdAt:stamp});
+     tx.set(alias,{roomId:ref.id,hostUid:state.uid,createdAt:stamp});
+    });
+    code=candidate;break;
+   }catch(err){
+    if(err.message==="room-code-taken"||err.code==="already-exists"||err.code==="aborted")continue;
+    throw err;
+   }
+  }
+  if(!code)throw new Error("無法分配三字母代碼，請重試。");
+  attachRoom(ref.id,code);info("✅ 房間已建立！代碼："+code);
  }catch(err){firebaseError(err,"建立房間");}
  finally{state.busy=false;render();}
 }
 $("createRoom").addEventListener("click",createRoom);
-$("joinForm").addEventListener("submit",e=>{
+$("roomCode").addEventListener("input",()=>{
+ $("roomCode").value=C.normalizeCode($("roomCode").value);
+});
+async function resolveCode(code){
+ if(!C.validCode(code)){info("請輸入三個英文字母，例如 CAT。");return;}
+ if(!state.ready){info("Firebase 尚未連接。");return;}
+ try{
+  const doc=state.sdk.doc(state.db,CODES,code);
+  const snap=await state.sdk.getDoc(doc);
+  if(!snap.exists()){info("搵唔到房間 "+code+"，請核對代碼。");return;}
+  const id=snap.data().roomId;
+  if(!C.validRoom(id)){info("房間資料無效，請聯絡房主。");return;}
+  attachRoom(id,code);
+ }catch(err){firebaseError(err,"尋找房間");}
+}
+$("joinForm").addEventListener("submit",async e=>{
  e.preventDefault();
  if(!checkName())return;
- const id=$("roomCode").value.trim();
- if(!C.validRoom(id)){info("房間代碼需要 20 個英數字元。");return;}
- attachRoom(id);
+ await resolveCode(C.normalizeCode($("roomCode").value));
 });
 async function joinSelected(){
  if(!checkName()||!state.room||state.busy)return;
@@ -295,7 +331,7 @@ function render(){
  $("createRoom").disabled=!state.ready||state.busy;
  $("joinRoom").disabled=!state.ready||state.busy;
  if(!inRoom)return;
- txt("displayRoomCode",state.roomId);
+ txt("displayRoomCode",state.roomCode||"讀取中…");
  if(!state.room){
   txt("stageBadge","房間載入中…");
   for(const id of ["lobby","inputStage","reviewStage","betweenStage","finishedStage"])$(id).hidden=true;
@@ -365,15 +401,18 @@ function connect(){
   state.ready=true;$("connectionDot").classList.add("online");
   txt("connectionMessage","🌐 已連接 Firebase · 可跨手機即時同步");
   render();
-  const room=new URLSearchParams(location.search).get("room");
-  if(C.validRoom(room))attachRoom(room);
+  const params=new URLSearchParams(location.search);
+  const code=C.normalizeCode(params.get("code"));
+  const oldId=params.get("room");
+  if(C.validCode(code))await resolveCode(code);
+  else if(C.validRoom(oldId))attachRoom(oldId);
  })().catch(err=>{
   txt("connectionMessage","⚠️ 連線失敗；請檢查 Firebase Authentication / Rules");
   firebaseError(err,"連接 Firebase");
  });
 }
 window.SameWordDebug={
- getState:()=>({player,ready:state.ready,roomId:state.roomId,stage:state.room?.stage,round:state.room?.round,
+ getState:()=>({player,ready:state.ready,roomId:state.roomId,roomCode:state.roomCode,stage:state.room?.stage,round:state.room?.round,
   members:participants(),submitted:state.room?.submitted||[],answers:[...state.answers.entries()],history:[...state.history.keys()]}),
  core:C
 };

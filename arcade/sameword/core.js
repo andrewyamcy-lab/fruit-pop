@@ -4,6 +4,12 @@ const PLAYERS=Object.freeze(["ada","andrew","esther","jenny","rain","tom","yaki"
 const LABELS=Object.freeze({ada:"Ada",andrew:"Andrew",esther:"Esther",jenny:"Jenny",rain:"Rain",tom:"Tom",yaki:"Yaki"});
 const TIME_LIMIT=30;
 function validRoom(id){return typeof id==="string"&&/^[A-Za-z0-9]{20}$/.test(id);}
+function normalizeCode(v){return String(v||"").trim().toUpperCase().replace(/[^A-Z]/g,"").slice(0,3);}
+function validCode(v){return typeof v==="string"&&/^[A-Z]{3}$/.test(v);}
+function generateCode(bytes){
+ if(!bytes||bytes.length<3)throw Error("Three random bytes needed");
+ return Array.from(bytes).slice(0,3).map(n=>String.fromCharCode(65+n%26)).join("");
+}
 function cleanWord(word){return Array.from(String(word||"").trim().replace(/\s+/g," ")).slice(0,30).join("");}
 function countdown(startedAt,now=Date.now()){
  const ms=startedAt==null?30000:Math.max(0,30000-(now-startedAt));
@@ -19,5 +25,5 @@ function result(room){
  const unanimous=allVoted&&allSubmitted&&agree.length===players.length&&disagree.length===0;
  return {playerCount:players.length,submittedCount:submitted.length,voteCount:agree.length+disagree.length,allSubmitted,allVoted,unanimous};
 }
-global.SameWordCore=Object.freeze({PLAYERS,LABELS,TIME_LIMIT,validRoom,cleanWord,countdown,result});
+global.SameWordCore=Object.freeze({PLAYERS,LABELS,TIME_LIMIT,validRoom,validCode,normalizeCode,generateCode,cleanWord,countdown,result});
 })(window);
