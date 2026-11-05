@@ -3,10 +3,10 @@
 Game URL: https://andrewyamcy-lab.github.io/fruit-pop/arcade/sameword/
 
 ## Features
-- Create a room and invite 1–6 other friends by link or a **unique 3-letter uppercase room code** (e.g. CAT).
-- New rooms keep an internal 20-character document ID while offering a short three-letter code through the `friendarcade_sameword_codes_v1` index. Firestore transactions claim the code and room atomically, preventing duplicates.
-- Older invitation links using 20-character room IDs still work, though those existing rooms do not automatically receive a short code.
-- **Important**: Three letters offer just 17,576 combinations. These codes are convenient join references, **not secret passwords**; do not enter sensitive words.
+- Create a room and invite 1–6 other friends by link or a **unique 3-digit room code** (e.g. 007).
+- New rooms keep an internal 20-character document ID while offering a short three-digit code through the `friendarcade_sameword_codes_v1` index. Firestore transactions claim the code and room atomically, preventing duplicates.
+- Older 20-character invitation links and any existing 3-letter code links still work, although previously created rooms retain their old codes. Create a new room for a 3-digit code.
+- **Important**: Three digits offer only 1,000 combinations (000–999). These codes are convenient join references, **not secret passwords**; do not enter sensitive words.
 - Fixed selectable players: Ada, Andrew, Esther, Jenny, Rain, Tom, Yaki.
 - One-time anonymous Firebase identity is maintained by the browser. No manual account login.
 - Only the room creator can start; 2–7 players required. Membership is frozen after start.

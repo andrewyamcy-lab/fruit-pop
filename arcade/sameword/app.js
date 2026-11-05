@@ -55,13 +55,13 @@ if(!player)$("picker").hidden=false;
 renderPicker();
 function setRoomRoute(id,code=null){
  const url=new URL(location.href);url.searchParams.delete("room");url.searchParams.delete("code");
- if(C.validCode(code))url.searchParams.set("code",code);
+ if(C.validCode(code)||C.validLegacyCode(code))url.searchParams.set("code",code);
  else if(id)url.searchParams.set("room",id);
  history.replaceState(null,"",url.pathname+url.search+url.hash);
 }
 function invitationLink(){
  const url=new URL(location.href);url.searchParams.delete("room");url.searchParams.delete("code");
- if(C.validCode(state.roomCode))url.searchParams.set("code",state.roomCode);
+ if(C.validCode(state.roomCode)||C.validLegacyCode(state.roomCode))url.searchParams.set("code",state.roomCode);
  else url.searchParams.set("room",state.roomId);
  return url.toString();
 }
@@ -84,7 +84,7 @@ function attachRoom(id,code=null){
  if(!C.validRoom(id)){info("房間代碼無效。");return;}
  if(!state.ready){info("Firebase 尚未連接。");return;}
  if(state.unsubscribe)state.unsubscribe();
- state.roomId=id;state.roomCode=C.validCode(code)?code:null;state.room=null;state.answers.clear();state.history.clear();
+ state.roomId=id;state.roomCode=(C.validCode(code)||C.validLegacyCode(code))?code:null;state.room=null;state.answers.clear();state.history.clear();
  state.answerKey=null;state.previousStage="";state.historyRequest.clear();
  setRoomRoute(id,state.roomCode);render();
  state.unsubscribe=state.sdk.onSnapshot(roomRef(),snap=>{
@@ -95,7 +95,7 @@ function attachRoom(id,code=null){
   }
   const prior=state.room;
   state.room=snap.data();
-  state.roomCode=C.validCode(state.room.code)?state.room.code:null;
+  state.roomCode=(C.validCode(state.room.code)||C.validLegacyCode(state.room.code))?state.room.code:null;
   setRoomRoute(state.roomId,state.roomCode);
   const key=String(state.room.round)+":"+state.room.stage;
   if(key!==state.previousStage){
@@ -120,7 +120,7 @@ async function createRoom(){
  try{
   const ref=state.sdk.doc(state.sdk.collection(state.db,ROOMS));
   let code=null;
-  // Atomically reserve one three-letter alias and its underlying room.
+  // Atomically reserve one three-digit alias and its underlying room.
   for(let attempt=0;attempt<12;attempt++){
    const bytes=new Uint8Array(3);crypto.getRandomValues(bytes);
    const candidate=C.generateCode(bytes);
@@ -141,7 +141,7 @@ async function createRoom(){
     throw err;
    }
   }
-  if(!code)throw new Error("無法分配三字母代碼，請重試。");
+  if(!code)throw new Error("暫時搵唔到可用嘅三位數房間代碼，請重試。");
   attachRoom(ref.id,code);info("✅ 房間已建立！代碼："+code);
  }catch(err){firebaseError(err,"建立房間");}
  finally{state.busy=false;render();}
@@ -151,7 +151,7 @@ $("roomCode").addEventListener("input",()=>{
  $("roomCode").value=C.normalizeCode($("roomCode").value);
 });
 async function resolveCode(code){
- if(!C.validCode(code)){info("請輸入三個英文字母，例如 CAT。");return;}
+ if(!C.validCode(code)&&!C.validLegacyCode(code)){info("請輸入 3 位數字，例如 007。");return;}
  if(!state.ready){info("Firebase 尚未連接。");return;}
  try{
   const doc=state.sdk.doc(state.db,CODES,code);
@@ -402,9 +402,10 @@ function connect(){
   txt("connectionMessage","🌐 已連接 Firebase · 可跨手機即時同步");
   render();
   const params=new URLSearchParams(location.search);
-  const code=C.normalizeCode(params.get("code"));
+  const raw=params.get("code");
+  const code=C.validLegacyCode(String(raw||"").toUpperCase())?String(raw).toUpperCase():C.normalizeCode(raw);
   const oldId=params.get("room");
-  if(C.validCode(code))await resolveCode(code);
+  if(C.validCode(code)||C.validLegacyCode(code))await resolveCode(code);
   else if(C.validRoom(oldId))attachRoom(oldId);
  })().catch(err=>{
   txt("connectionMessage","⚠️ 連線失敗；請檢查 Firebase Authentication / Rules");
