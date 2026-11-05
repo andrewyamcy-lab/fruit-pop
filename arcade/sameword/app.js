@@ -6,7 +6,7 @@ const ROOMS="friendarcade_sameword_rooms_v1", STORAGE="friendarcade-player-v1";
 const state={
  db:null,sdk:null,uid:null,roomId:null,room:null,ready:false,busy:false,
  unsubscribe:null,answerKey:null,answers:new Map(),history:new Map(),
- roundLoading:false,lastAdvance:0,previousStage:"",historyRequest:new Set(),joined:false
+ roundLoading:false,lastAdvance:0,previousStage:"",historyRequest:new Set(),loadAttempts:new Map(),joined:false
 };
 let player=null,toastTimeout=null;
 try{const stored=localStorage.getItem(STORAGE);if(C.PLAYERS.includes(stored))player=stored;}catch(_){}
@@ -75,7 +75,7 @@ $("shareRoom").addEventListener("click",share);
 $("leaveRoom").addEventListener("click",()=>{
  if(state.unsubscribe)state.unsubscribe();
  state.unsubscribe=null;state.room=null;state.roomId=null;state.answers.clear();state.history.clear();
- state.answerKey=null;state.historyRequest.clear();setRoomRoute(null);render();
+ state.answerKey=null;state.historyRequest.clear();state.loadAttempts.clear();setRoomRoute(null);render();
 });
 function attachRoom(id){
  if(!C.validRoom(id)){info("房間代碼無效。");return;}
@@ -265,7 +265,14 @@ async function loadRound(round,current){
   state.history.set(round,map);
   if(current&&state.room.round===round)state.answers=map;
   renderHistory();if(current)renderVote();
- }catch(err){console.warn("Failed reading revealed round",err);}
+ }catch(err){
+  console.warn("Failed reading revealed round",err);
+  const tries=state.loadAttempts.get(key)||0;
+  if(tries<3 && state.roomId===key.split(":")[0] && state.room && state.room.round>=round){
+   state.loadAttempts.set(key,tries+1);
+   setTimeout(()=>loadRound(round,current),1200*(tries+1));
+  }else if(current){info("暫時讀唔到已揭曉詞語，請稍後重新整理。");}
+ }
  finally{state.historyRequest.delete(key);}
 }
 function renderHistory(){
