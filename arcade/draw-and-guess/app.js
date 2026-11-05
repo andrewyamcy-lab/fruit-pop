@@ -12,7 +12,10 @@ const state={
  lastGuessAt:0,lastStatus:"",hostWarn:false,busy:false
 };
 const c=$("canvas"),ctx=c.getContext("2d");ctx.lineCap="round";ctx.lineJoin="round";
-function say(message){$("connection").textContent=message;state.lastStatus=message;}
+function say(message){
+ $("connection").textContent=message;state.lastStatus=message;
+ $("connectionDot").classList.toggle("online",message.startsWith("🟢"));
+}
 function notice(message){$("guessNotice").textContent=message;}
 function err(error,message){console.warn(message,error);say("⚠️ "+message);notice(message);}
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -59,7 +62,7 @@ function renderAvailable(){
   button.type="button";button.disabled=state.busy;
   button.addEventListener("click",()=>{
    if(!Core.PLAYERS.includes(selectedPlayer())){
-    alert("請先喺上方揀你嘅玩家名字，再按加入。");$("nameSelect").focus();return;
+    pendingPlayerAction=()=>{$("roomCodeInput").value=item.code;void joinRoom();};openPlayerPicker();return;
    }
    $("roomCodeInput").value=item.code;void joinRoom();
   });
@@ -96,7 +99,24 @@ function randomCode(){
  return [...array].map(v=>CODES[v%CODES.length]).join("");
 }
 function selectedPlayer(){return $("nameSelect").value;}
-function savePlayer(p){state.player=p;try{localStorage.setItem("friendarcade-player-v1",p);}catch(_){}}
+function syncPlayerDisplay(){
+ const player=selectedPlayer();
+ $("playerName").textContent=Core.LABELS[player]||"選擇玩家";
+ document.querySelectorAll("[data-pick-player]").forEach(b=>{
+  b.classList.toggle("selected",b.dataset.pickPlayer===player);
+ });
+}
+function hidePlayerPicker(){$("playerPicker").hidden=true;$("playerButton").focus();}
+function openPlayerPicker(){
+ if(state.room)return;
+ $("playerPicker").hidden=false;
+ document.querySelector('[data-pick-player="'+(selectedPlayer()||"ada")+'"]')?.focus();
+}
+let pendingPlayerAction=null;
+function savePlayer(p){
+ state.player=p;$("nameSelect").value=p;syncPlayerDisplay();
+ try{localStorage.setItem("friendarcade-player-v1",p);}catch(_){}
+}
 function mine(){return state.room&&state.room.members?.[state.player]===state.uid;}
 function isHost(){return state.room?.ownerUid===state.uid;}
 function isArtist(){return state.room?.artistUid===state.uid&&state.room?.artistId===state.player;}
@@ -115,8 +135,8 @@ function action(label,handler,style="secondary",disabled=false){
  const b=element("button",label,style);b.type="button";b.disabled=disabled;
  b.addEventListener("click",()=>{Promise.resolve().then(handler).catch(e=>err(e,"操作失敗，請再試。"));});return b;
 }
-function showEntry(){ $("entry").hidden=false;$("availableRoomsPanel").hidden=false;$("gameLayout").hidden=true;renderAvailable();}
-function showGame(){ $("entry").hidden=true;$("availableRoomsPanel").hidden=true;$("gameLayout").hidden=false;}
+function showEntry(){ $("entryView").hidden=false;$("gameLayout").hidden=true;$("playerButton").disabled=false;renderAvailable();}
+function showGame(){ $("entryView").hidden=true;$("gameLayout").hidden=false;$("playerButton").disabled=true;$("playerPicker").hidden=true;}
 function cleanSubs(){
  for(const key of ["unsubStrokes","unsubGuesses","unsubChoices"]){
   if(state[key]){state[key]();state[key]=null;}
@@ -127,7 +147,7 @@ function cleanSubs(){
 function resetCanvas(){ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);}
 async function createRoom(){
  if(!state.db||state.busy)return;
- const p=selectedPlayer();if(!Core.PLAYERS.includes(p)){alert("請先選擇玩家名稱。");return;}
+ const p=selectedPlayer();if(!Core.PLAYERS.includes(p)){pendingPlayerAction=()=>void createRoom();openPlayerPicker();return;}
  state.busy=true;$("createRoom").disabled=true;
  try{
   for(let tries=0;tries<5;tries++){
@@ -154,7 +174,7 @@ async function createRoom(){
 async function joinRoom(){
  if(!state.db||state.busy)return;
  const p=selectedPlayer(),code=$("roomCodeInput").value.trim().toUpperCase();
- if(!Core.PLAYERS.includes(p)){alert("請先選擇玩家名稱。");return;}
+ if(!Core.PLAYERS.includes(p)){pendingPlayerAction=()=>void joinRoom();openPlayerPicker();return;}
  if(!Core.validCode(code)){alert("房號需要 6 位英文字母或數字。");return;}
  state.busy=true;$("joinRoom").disabled=true;
  try{
@@ -533,6 +553,21 @@ $("shareRoom").addEventListener("click",async()=>{
   else prompt("複製房間連結",url);
  }catch(e){if(e.name!=="AbortError")prompt("複製房間連結",url);}
 });
+$("playerButton").addEventListener("click",openPlayerPicker);
+$("closePlayerPicker").addEventListener("click",hidePlayerPicker);
+$("playerPicker").addEventListener("click",e=>{if(e.target===$("playerPicker"))hidePlayerPicker();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("playerPicker").hidden)hidePlayerPicker();});
+document.querySelectorAll("[data-pick-player]").forEach(b=>b.addEventListener("click",()=>{
+ const p=b.dataset.pickPlayer;
+ if(!Core.PLAYERS.includes(p))return;
+ $("nameSelect").value=p;
+ syncPlayerDisplay();
+ try{localStorage.setItem("friendarcade-player-v1",p);}catch(_){}
+ hidePlayerPicker();
+ const action=pendingPlayerAction;pendingPlayerAction=null;
+ if(action)action();
+}));
+$("joinForm").addEventListener("submit",e=>{e.preventDefault();void joinRoom();});
 $("createRoom").addEventListener("click",()=>void createRoom());
 $("joinRoom").addEventListener("click",()=>void joinRoom());
 $("roomCodeInput").addEventListener("input",e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,"").slice(0,6);});
@@ -540,6 +575,7 @@ try{
  const saved=localStorage.getItem("friendarcade-player-v1");
  if(Core.PLAYERS.includes(saved))$("nameSelect").value=saved;
 }catch(_){}
+syncPlayerDisplay();
 async function connect(){
  const cfg=window.FRUITPOP_FIREBASE_CONFIG;
  if(!cfg?.apiKey){say("⚠️ 未設定 Firebase");state.lobbyState="error";renderAvailable();return;}
@@ -553,7 +589,8 @@ async function connect(){
   const app=A.initializeApp(cfg,"friendarcade-draw-guess");
   const signed=await Auth.signInAnonymously(Auth.getAuth(app));
   state.uid=signed.user.uid;state.sdk=F;state.db=F.getFirestore(app);
-  say("🟢 Firebase 已連接");
+  say("🟢 Firebase 已連接 · 可跨手機即時同步");
+  $("createRoom").disabled=false;$("joinRoom").disabled=false;
   const code=new URLSearchParams(location.search).get("room")?.toUpperCase();
   if(Core.validCode(code))$("roomCodeInput").value=code;
   showEntry();resetCanvas();startLobbyFeed();

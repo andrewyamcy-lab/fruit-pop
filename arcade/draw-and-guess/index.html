@@ -23,22 +23,101 @@
 .available-progress{height:7px;background:#ede5f5;border-radius:99px;overflow:hidden}
 .available-progress span{display:block;height:100%;background:linear-gradient(90deg,#967ac4,#65b99a);border-radius:inherit;transition:width .25s ease}
 @media(max-width:680px){.available-list{grid-template-columns:1fr}.available-panel{margin:10px 0}}
+
+/* The lobby/entry screens intentionally reuse SameWord's design language. */
+:root{--ink:#302847;--muted:#877d9a;--purple:#7450b4;--line:#e9e3f3}
+body{background:radial-gradient(ellipse at 10% 0%,#fde9f2,transparent 44%),radial-gradient(ellipse at 96% 8%,#e4dcff,transparent 48%),#f7f5ff}
+.shell{width:min(990px,calc(100% - 30px));padding:20px 0 60px}
+.back,.player-switch{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #e9e0f5;border-radius:14px;padding:10px 13px;font-size:13px;font-weight:850;box-shadow:0 6px 17px #46336313}
+.player-switch{color:var(--purple)}
+.player-switch:disabled{opacity:.72;cursor:default}
+header.hero{text-align:center;padding:29px 12px 25px}
+.hero .eyebrow{font-size:11px;letter-spacing:1.8px}
+.hero h1{font-size:clamp(33px,5.5vw,53px);letter-spacing:-1.8px;margin:8px 0}
+.hero p{font-size:13px;color:var(--muted);line-height:1.75;margin:0}
+.connection-line{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.connection-dot{width:8px;height:8px;border-radius:50%;background:#dbac68;flex:0 0 8px}
+.connection-dot.online{background:#31ae80}
+.panel{border:1px solid var(--line);background:#fff;border-radius:23px;box-shadow:0 10px 32px #51417517;padding:22px}
+.panel h2{font-size:21px;letter-spacing:-.5px;margin:0 0 9px}
+.primary,.secondary{border-radius:13px;padding:12px 17px;min-height:45px;font-weight:900;font-size:13px}
+.primary{border:0;background:linear-gradient(120deg,#8459c1,#6646ac);color:#fff;box-shadow:0 5px 13px #7152ab2f}
+.secondary{border:1px solid #decfee;background:#f3ecff;color:#674a95}
+.entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+.entry-grid .entry-card{display:flex;flex-direction:column;min-height:215px}
+.entry-sub{color:var(--muted);font-size:13px;line-height:1.65;margin:0 0 17px}
+.entry-card .entry-sub{margin-bottom:16px}
+.entry-card .primary{margin-top:auto}
+.entry-card .field{margin:0 0 11px}
+.entry-card .field label{color:#5c5070;font-size:12px}
+.entry-card .field input{padding:13px;font-size:16px;background:#fefcff;border:1px solid #d9cee9}
+.entry-card #joinForm{margin-top:auto}
+.entry-helper{font-size:12px;color:#6e5b85;line-height:1.65;margin:8px 0 14px}
+.entry-privacy{color:#9384a3;font-size:11px;line-height:1.65;margin:1px 0 20px;padding:2px 4px}
+.available-panel{margin:0 0 15px}
+.available-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+.available-title h2{margin:0;font-size:19px}
+.online-label{display:inline-flex;gap:7px;align-items:center;font-size:11px;font-weight:850;color:#287e5d;background:none;padding:0}
+.online-label::before{content:"";width:8px;height:8px;border-radius:50%;background:#39a47d}
+.available-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:0}
+.available-room{background:linear-gradient(125deg,#fcfaff,#f3edff);border:1px solid #e7ddf3;border-radius:16px;padding:14px;display:grid;gap:10px}
+.available-room strong{font-size:14px}
+.available-room small{color:#8c7d9f;font-size:11px}
+.available-room .primary{box-shadow:0 5px 13px #7152ab1a}
+.available-empty{background:#faf8ff;color:#877998;border:1px dashed #e1d7ed;border-radius:14px;padding:17px 14px;font-size:12px;line-height:1.75}
+.available-progress{background:#e8dff2}
+.available-progress span{background:#a182d2}
+.muted{font-size:12px;color:var(--muted);line-height:1.7}
+.player-picker .modal-inner{max-width:440px;border-radius:24px;padding:23px}
+.player-picker h2{font-size:21px;letter-spacing:-.5px}
+.player-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.player-choices button{background:#f8f4ff;border:1px solid #e9dcf6;border-radius:13px;padding:13px;color:#574075;font-weight:900;min-height:45px}
+.player-choices button.selected{border:2px solid #8863bf;background:#ecdeff}
+.player-picker .modal-inner .entry-sub{margin-top:0}
+.footer{font-size:10px;color:#a59ab1;letter-spacing:.8px;padding:15px 0;margin:8px 0}
+@media(max-width:650px){
+ .shell{width:calc(100% - 20px);padding-top:11px}
+ header.hero{padding:20px 5px 19px}
+ .entry-grid{grid-template-columns:1fr;gap:13px}
+ .panel{padding:17px;border-radius:19px}
+ .entry-grid .entry-card{min-height:0}
+ .available-list{grid-template-columns:1fr}
+ .available-room{padding:12px}
+ .player-switch,.back{font-size:12px;padding:10px 12px}
+ .player-choices{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style>
 </head>
 <body><div class="shell">
-<div class="top"><a class="back" href="../">← Friend Arcade</a><span class="pill" id="connection">🔄 連線中</span></div>
-<header class="header"><span class="eyebrow">DRAW & GUESS · HYBRID MODE</span><h1>🎨 猜猜畫畫</h1><p>7 位朋友，輪流畫畫、限時猜題。30 秒後有提示，60 秒後有四選一！</p></header>
-<section class="panel" id="entry">
- <h2>🎮 加入遊戲</h2><p class="small">唔使註冊帳號。選擇玩家名字，建立房間或者輸入朋友分享嘅六位房號。</p>
- <div class="field"><label for="nameSelect">你係邊位？</label><select id="nameSelect"><option value="">請選擇玩家</option><option value="ada">Ada</option><option value="andrew">Andrew</option><option value="esther">Esther</option><option value="jenny">Jenny</option><option value="rain">Rain</option><option value="tom">Tom</option><option value="yaki">Yaki</option></select></div>
- <div class="gap"><button type="button" class="primary wide" id="createRoom">＋ 建立新房間</button><div class="input-line"><input id="roomCodeInput" maxlength="6" placeholder="輸入六位房號" autocomplete="off" autocapitalize="characters" aria-label="六位房間代碼"><button type="button" class="secondary" id="joinRoom">加入</button></div></div>
- <p class="notice">🔒 你嘅名字並非真正身份驗證。呢個係朋友間休閒遊戲；房間碼唔建議公開分享。需要 Firebase 新安全規則先可以多人同步。</p>
-</section>
+<div class="top"><a class="back" href="../">← Friend Arcade</a><button class="player-switch" id="playerButton" type="button" aria-haspopup="dialog" aria-controls="playerPicker">👤 <span id="playerName">選擇玩家</span> ⌄</button></div>
+<header class="hero"><span class="eyebrow">SEVEN FRIENDS · DRAW TOGETHER</span><h1>🎨 猜猜畫畫</h1><p>每人輪流畫畫 · 90 秒限時猜答案 · 30 秒後有提示 · 60 秒後有四選一</p></header>
+<div class="connection-line" role="status" aria-live="polite"><span class="connection-dot" id="connectionDot"></span><span id="connection">🔄 正在連接 Firebase…</span></div>
+<div id="entryView">
 <section class="panel available-panel" id="availableRoomsPanel" aria-labelledby="availableTitle">
- <div class="horizontal"><h2 id="availableTitle">🌐 現正開放嘅房間</h2><span class="badge" id="availableCount">讀取中…</span></div>
- <p class="small">同 SameWord 一樣，房主開房後會即時顯示喺呢度。揀好玩家名字，直接按「一鍵加入」就得，唔使手動輸入房號。</p>
- <div id="availableRooms" class="available-list" aria-live="polite"><p class="available-empty">正在連接即時房間列表…</p></div>
+ <div class="available-title"><h2 id="availableTitle">🎮 朋友開緊嘅房間</h2><span class="online-label" id="availableCount">即時房間列表</span></div>
+ <p class="entry-sub">有人建立公開房間，就會即時顯示喺度。選擇自己名字，一按即可加入，唔使輸入房間號碼。</p>
+ <div id="availableRooms" class="available-list" aria-live="polite"><p class="available-empty">正在尋找可加入嘅房間…</p></div>
+ <p class="muted" style="margin-top:12px">只顯示未開始、未滿員、房主最近有活動嘅公開房間。若清單冇顯示，你仍然可以輸入六位房號加入。</p>
 </section>
+<div class="entry-grid" id="entry">
+ <section class="panel entry-card" aria-labelledby="createTitle">
+  <h2 id="createTitle">✨ 建立新房間</h2>
+  <p class="entry-sub">由你做房主，邀請 2–7 位朋友一齊畫畫。毋須註冊或密碼。</p>
+  <select id="nameSelect" hidden aria-hidden="true"><option value="">請選擇玩家</option><option value="ada">Ada</option><option value="andrew">Andrew</option><option value="esther">Esther</option><option value="jenny">Jenny</option><option value="rain">Rain</option><option value="tom">Tom</option><option value="yaki">Yaki</option></select>
+  <p class="entry-helper">🌐 新房間會顯示喺朋友嘅公開房間列表</p>
+  <button type="button" class="primary wide" id="createRoom" disabled>＋ 建立猜猜畫畫房間</button>
+ </section>
+ <section class="panel entry-card" aria-labelledby="joinTitle">
+  <h2 id="joinTitle">🔗 加入朋友房間</h2>
+  <p class="entry-sub">輸入朋友分享嘅房號，或者直接開啟邀請連結。</p>
+  <form id="joinForm">
+    <div class="field"><label for="roomCodeInput">房間代碼（6 位英文字母／數字）</label><input id="roomCodeInput" maxlength="6" placeholder="例如 A7B2C3" autocomplete="off" autocapitalize="characters" spellcheck="false" required></div>
+    <button type="submit" class="secondary wide" id="joinRoom" disabled>加入房間 →</button>
+  </form>
+ </section>
+</div>
+<div class="entry-privacy">🔒 使用匿名 Firebase 身份，無需登入帳號。名字係朋友之間自行選擇，唔代表正式身份驗證。</div>
+</div>
 <div class="layout" id="gameLayout" hidden>
  <section class="panel">
   <div class="stage"><div><strong id="stageName">等待玩家加入…</strong><p class="small" id="stageDescription"></p></div><div class="clock" id="clock">—</div></div>
@@ -75,5 +154,21 @@
 <div class="footer">FRIEND ARCADE ✦ 七人猜猜畫畫 · 90 秒混合玩法</div>
 </div>
 <div class="modal" id="topicModal" hidden><div class="modal-inner"><h2>🎨 輪到你畫啦！</h2><p class="small">以下三題只有畫家見到。揀一題開始 90 秒回合。</p><div class="topic-options" id="topicOptions"></div><button type="button" class="secondary wide" id="closeTopics">稍後再揀</button></div></div>
+<div id="playerPicker" class="modal player-picker" hidden role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+  <div class="modal-inner">
+    <h2 id="pickerTitle">你係邊位玩家？👋</h2>
+    <p class="entry-sub">揀返你嘅名字後，就可以建立房間或者一鍵加入朋友房間。</p>
+    <div class="player-choices" id="playerChoices">
+      <button type="button" data-pick-player="ada">Ada</button>
+      <button type="button" data-pick-player="andrew">Andrew</button>
+      <button type="button" data-pick-player="esther">Esther</button>
+      <button type="button" data-pick-player="jenny">Jenny</button>
+      <button type="button" data-pick-player="rain">Rain</button>
+      <button type="button" data-pick-player="tom">Tom</button>
+      <button type="button" data-pick-player="yaki">Yaki</button>
+    </div>
+    <button type="button" class="secondary wide" id="closePlayerPicker" style="margin-top:13px">關閉</button>
+  </div>
+</div>
 <script src="../firebase-config.js"></script><script src="./core.js"></script><script type="module" src="./app.js"></script>
 </body></html>
