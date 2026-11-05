@@ -1,3 +1,18 @@
+## SameWord v1.3 — Majority voting, 30-second vote deadline and lobby lifecycle
+
+- Round input **30 seconds**, then reveal, followed by a separate **30-second vote** using a Firestore server timestamp.
+- For `N` participants, the first side with `floor(N/2)+1` votes immediately wins. Majority Agree finishes the game; majority Disagree proceeds to the next 30-second input round.
+- If neither side reaches majority after 30 seconds, the result defaults to **no agreement** and proceeds to the next round. Votes received after the deadline are rejected by Firestore security rules.
+- With seven friends, four votes are decisive; remaining players do not have to vote.
+- Lobby host can **關閉房間** to mark a room closed; if it is a public waiting room its directory entry is closed in the same batch.
+- Host pressing **離開並關閉** while waiting in the lobby also closes the room; non-host participants can leave the waiting lobby and their name/capacity are removed atomically.
+- During an active game, leaving a page does not modify the player roster or discard round history. Reloading or rejoining preserves that player's place if anonymous browser identity is retained.
+- While the public lobby is open, the host sends a server-timestamped heartbeat around once per minute. Other browsers hide public rooms once the host has had no heartbeat for 10 minutes. Opening the same host room again can reactivate it.
+- **This is not guaranteed online presence**: browser tab suspension, network loss and Firestore offline behavior may delay heartbeats. True instantaneous disconnection detection would require Realtime Database presence and typically Cloud Functions.
+- **Important:** GitHub publishing does not activate new Firestore permissions. Copy the entire latest root `firestore.rules` to Firebase Console → Firestore → Rules and Publish. The repository has a GitHub Actions workflow to compile rules in a Firestore emulator.
+- The 3-digit codes are join references, not secure passwords, and remain reserved after a room is closed. Automatic code reuse and cleanup are not implemented yet.
+
+
 # SameWord — Friend Arcade (2–7 players)
 
 Game URL: https://andrewyamcy-lab.github.io/fruit-pop/arcade/sameword/

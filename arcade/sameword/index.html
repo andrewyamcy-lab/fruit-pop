@@ -67,7 +67,7 @@ header.hero{text-align:center;padding:29px 12px 25px}.eyebrow{font-size:11px;let
 </div>
 <div id="roomView" hidden>
  <section class="card">
- <div class="roomtop"><div><div class="eyebrow">SAMEWORD ROOM</div><div class="roomcode">房間代碼：<strong id="displayRoomCode"></strong></div><p class="muted" style="margin-top:5px">用 3 位數字加入，例如 007；此代碼並非私密密碼。</p></div><div class="row"><span class="badge" id="stageBadge">準備中</span><button class="secondary" id="shareRoom" type="button">🔗 分享邀請</button><button class="quiet" id="leaveRoom" type="button">離開頁面</button></div></div>
+ <div class="roomtop"><div><div class="eyebrow">SAMEWORD ROOM</div><div class="roomcode">房間代碼：<strong id="displayRoomCode"></strong></div><p class="muted" style="margin-top:5px">用 3 位數字加入，例如 007；此代碼並非私密密碼。</p></div><div class="row"><span class="badge" id="stageBadge">準備中</span><button class="secondary" id="shareRoom" type="button">🔗 分享邀請</button><button class="danger" id="closeRoom" type="button" hidden>關閉房間</button><button class="quiet" id="leaveRoom" type="button">離開房間</button></div></div>
  <section id="lobby" hidden><h2>👥 等候朋友加入</h2><p class="sub">房主可以喺 2–7 人加入後開始。遊戲中途唔會新增玩家。</p><div class="names" id="lobbyNames"></div><div class="notice">⏱️ 每人每輪同時開始 30 秒倒數；全部交齊就會提早揭曉。</div><button id="joinSelected" class="secondary wide" type="button" hidden style="margin:12px 0">＋ 以目前玩家名稱加入房間</button><button id="startRoom" class="primary wide" disabled>▶ 開始遊戲（至少 2 人）</button></section>
  <section id="inputStage" hidden><div class="roundlabel"><h2 id="roundTitle">第 1 輪 · 輸入詞語</h2><span class="badge" id="submittedBadge">0/7 已提交</span></div>
    <div class="timerbox" id="timerBox"><span>剩餘時間</span><strong id="countdown" aria-live="off">00:30</strong><div class="timertrack"><div class="timerfill" id="timerFill"></div></div></div>
@@ -77,9 +77,11 @@ header.hero{text-align:center;padding:29px 12px 25px}.eyebrow{font-size:11px;let
  <section id="reviewStage" hidden><div class="roundlabel"><h2 id="reviewTitle">第 1 輪 · 答案揭曉</h2><span class="badge green" id="reviewBadge">等待投票</span></div>
    <p class="sub">你覺得大家輸入嘅詞語可以算係意思相同嗎？全員同意先勝出。</p>
    <div id="currentWords" class="words"></div>
+   <div class="timerbox" id="voteTimerBox" style="margin:15px 0"><span>投票剩餘時間（過半即時決定）</span><strong id="voteCountdown">00:30</strong><div class="timertrack"><div class="timerfill" id="voteTimerFill"></div></div></div>
    <div id="voteArea"><div class="voting"><button class="primary" id="agreeButton">✓ 同意 · 意思相同</button><button class="danger" id="disagreeButton">✕ 不同意 · 繼續玩</button></div><p id="voteStatus" class="notice">等待大家投票…</p></div>
  </section>
  <section id="betweenStage" hidden><h2>🔄 下一輪準備中</h2><p class="sub">今輪未達成共識，大家可以參考舊詞語，繼續聯想。</p><p id="transitionStatus" class="notice">即將開始新嘅 30 秒回合…</p></section>
+ <section id="closedStage" class="results" hidden style="background:#fff4ef;border-color:#edcabe"><h2 style="color:#965442">🔒 房間已關閉</h2><p>房主已結束呢間房。你可以返回 SameWord 主頁重新建立或加入其他房間。</p></section>
  <section id="finishedStage" class="results" hidden><h2>🎉 全員默契成功！</h2><p id="finishedMessage"></p><p style="margin-top:14px">🏆 Good Teamwork! 你哋終於諗到意思相同嘅詞語。</p></section>
  </section>
  <section class="card" id="historyPanel" hidden><h2>📜 歷史答案</h2><p class="sub">進入新一輪仍然可以睇返之前每位朋友寫過嘅詞語。</p><div id="historyList" class="history"></div></section>

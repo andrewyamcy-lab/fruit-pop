@@ -6,7 +6,7 @@ const ROOMS="friendarcade_sameword_rooms_v1", CODES="friendarcade_sameword_codes
  LOBBIES="friendarcade_sameword_lobbies_v1", STORAGE="friendarcade-player-v1";
 const state={
  db:null,sdk:null,uid:null,roomId:null,roomCode:null,room:null,ready:false,busy:false,
- unsubscribe:null,unsubscribeLobbies:null,lobbyState:"loading",lobbies:[],pendingRoom:null,
+ unsubscribe:null,unsubscribeLobbies:null,lobbyState:"loading",lobbies:[],pendingRoom:null,lastHeartbeatAt:0,
  answerKey:null,answers:new Map(),history:new Map(),
  roundLoading:false,lastAdvance:0,previousStage:"",historyRequest:new Set(),loadAttempts:new Map(),joined:false
 };
@@ -131,16 +131,73 @@ async function share(){
  }catch(err){if(err?.name!=="AbortError")window.prompt("複製房間連結",link);}
 }
 $("shareRoom").addEventListener("click",share);
-$("leaveRoom").addEventListener("click",()=>{
+function detachRoom(){
  if(state.unsubscribe)state.unsubscribe();
- state.unsubscribe=null;state.room=null;state.roomId=null;state.roomCode=null;state.answers.clear();state.history.clear();
- state.answerKey=null;state.historyRequest.clear();state.loadAttempts.clear();setRoomRoute(null);render();
-});
+ state.unsubscribe=null;state.room=null;state.roomId=null;state.roomCode=null;
+ state.answers.clear();state.history.clear();state.historyRequest.clear();state.loadAttempts.clear();
+ state.answerKey=null;state.previousStage="";state.lastHeartbeatAt=0;
+ setRoomRoute(null);render();renderAvailable();
+}
+async function closeRoom(){
+ if(!owner()||!state.room||state.room.stage==="closed"||state.busy)return;
+ if(!window.confirm("確定要關閉房間？所有朋友將無法繼續遊戲。"))return;
+ state.busy=true;
+ try{
+  if(state.room.stage==="lobby"&&state.room.listed===true){
+   const batch=state.sdk.writeBatch(state.db);
+   batch.update(roomRef(),{stage:"closed"});
+   batch.update(lobbyRef(state.roomId),{stage:"closed",updatedAt:state.sdk.serverTimestamp()});
+   await batch.commit();
+  }else await state.sdk.updateDoc(roomRef(),{stage:"closed"});
+  info("🔒 房間已關閉。");
+  detachRoom();
+ }catch(err){firebaseError(err,"關閉房間");}
+ finally{state.busy=false;render();}
+}
+$("closeRoom").addEventListener("click",()=>void closeRoom());
+async function leaveRoom(){
+ if(!state.room){detachRoom();return;}
+ if(owner()&&state.room.stage==="lobby"){await closeRoom();return;}
+ if(!member()||state.room.stage!=="lobby"){
+  if(state.room.stage!=="closed"&&state.room.stage!=="finished"&&
+     !window.confirm("退出頁面不會取消你正在進行嘅回合。確定返回主頁？"))return;
+  detachRoom();return;
+ }
+ if(state.busy)return;
+ state.busy=true;
+ try{
+  const updates={["members."+player]:state.sdk.deleteField(),lastLeft:player};
+  if(state.room.listed===true){
+   const batch=state.sdk.writeBatch(state.db);
+   batch.update(roomRef(),updates);
+   batch.update(lobbyRef(state.roomId),{
+    memberNames:state.sdk.arrayRemove(player),
+    memberCount:state.sdk.increment(-1),
+    updatedAt:state.sdk.serverTimestamp()
+   });
+   await batch.commit();
+  }else await state.sdk.updateDoc(roomRef(),updates);
+  detachRoom();info("✅ 已退出房間，等待人數已更新。");
+ }catch(err){firebaseError(err,"離開房間");}
+ finally{state.busy=false;render();}
+}
+$("leaveRoom").addEventListener("click",()=>void leaveRoom());
+async function sendHostHeartbeat(){
+ if(!state.ready||!state.roomId||!owner()||state.room.stage!=="lobby"
+    ||state.room.listed!==true||state.busy)return;
+ const now=Date.now();
+ if(now-state.lastHeartbeatAt<55000)return;
+ state.lastHeartbeatAt=now;
+ try{await state.sdk.updateDoc(lobbyRef(state.roomId),{hostSeenAt:state.sdk.serverTimestamp()});}
+ catch(err){console.warn("Host heartbeat unavailable",err);}
+}
+setInterval(()=>{void sendHostHeartbeat();},60000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)void sendHostHeartbeat();});
 function attachRoom(id,code=null){
  if(!C.validRoom(id)){info("房間代碼無效。");return;}
  if(!state.ready){info("Firebase 尚未連接。");return;}
  if(state.unsubscribe)state.unsubscribe();
- state.roomId=id;state.roomCode=(C.validCode(code)||C.validLegacyCode(code))?code:null;state.room=null;state.answers.clear();state.history.clear();
+ state.roomId=id;state.lastHeartbeatAt=0;state.roomCode=(C.validCode(code)||C.validLegacyCode(code))?code:null;state.room=null;state.answers.clear();state.history.clear();
  state.answerKey=null;state.previousStage="";state.historyRequest.clear();
  setRoomRoute(id,state.roomCode);render();
  state.unsubscribe=state.sdk.onSnapshot(roomRef(),snap=>{
@@ -151,6 +208,7 @@ function attachRoom(id,code=null){
   }
   const prior=state.room;
   state.room=snap.data();
+  if(owner())void sendHostHeartbeat();
   state.roomCode=(C.validCode(state.room.code)||C.validLegacyCode(state.room.code))?state.room.code:null;
   setRoomRoute(state.roomId,state.roomCode);
   const key=String(state.room.round)+":"+state.room.stage;
@@ -193,7 +251,7 @@ async function createRoom(){
      tx.set(alias,{roomId:ref.id,hostUid:state.uid,createdAt:stamp});
      if(listed)tx.set(lobbyRef(ref.id),{
        code:candidate,listed:true,hostPlayer:player,memberNames:[player],memberCount:1,
-       stage:"lobby",createdAt:stamp,updatedAt:stamp
+       stage:"lobby",createdAt:stamp,updatedAt:stamp,hostSeenAt:stamp
      });
     });
     code=candidate;break;
@@ -333,25 +391,35 @@ function renderLobby(){
  $("startRoom").disabled=!owner()||people.length<2||state.busy;
  $("startRoom").textContent="▶ 開始遊戲（"+people.length+"/7 人）";
 }
+function renderVoteClock(){
+ if(!state.room||state.room.stage!=="review")return;
+ const d=C.decision(state.room);
+ txt("voteCountdown","00:"+String(d.seconds).padStart(2,"0"));
+ $("voteTimerFill").style.width=String(Math.min(100,d.remaining/300))+"%";
+ $("voteTimerBox").classList.toggle("urgent",d.seconds<=10);
+ return d;
+}
 function renderVote(){
  if(!state.room||state.room.stage!=="review")return;
- const room=state.room,people=participants(),r=coreResult();
+ const room=state.room,people=participants(),r=coreResult(),d=renderVoteClock();
  txt("reviewTitle","第 "+room.round+" 輪 · 答案揭曉");
- txt("reviewBadge",r.submittedCount+"/"+r.playerCount+" 位已提交");
+ txt("reviewBadge","過半門檻 "+d.threshold+" 票");
  renderWords($("currentWords"),state.answers,people);
  const hasVoted=room.agree.includes(player)||room.disagree.includes(player);
- $("agreeButton").disabled=!member()||hasVoted||state.busy||!state.history.has(room.round);
- $("disagreeButton").disabled=!member()||hasVoted||state.busy||!state.history.has(room.round);
- txt("voteStatus",r.allVoted?"全員已投票，正在處理結果…":
- hasVoted?"✅ 你已投票，等緊其他朋友（"+r.voteCount+"/"+r.playerCount+"）。":
- !member()?"你唔係呢個房間嘅參賽玩家。":
+ const locked=!!d.outcome||d.expired||!room.voteStartedAt;
+ $("agreeButton").disabled=!member()||hasVoted||state.busy||locked||!state.history.has(room.round);
+ $("disagreeButton").disabled=!member()||hasVoted||state.busy||locked||!state.history.has(room.round);
+ const tally="👍 "+d.agree+" 票同意 · 👎 "+d.disagree+" 票不同意 · 過半需要 "+d.threshold+" 票。";
+ txt("voteStatus",d.outcome?"結果已經確定，正在轉換回合… "+tally:
+ hasVoted?"✅ 你已投票，等緊其他朋友。"+tally:
+ !member()?"你唔係呢個房間嘅參賽玩家。"+tally:
  !state.history.has(room.round)?"正在讀取大家嘅答案…":
- "睇完大家嘅詞語後，請投「同意」或「不同意」。"+
- " 目前 "+r.voteCount+"/"+r.playerCount+" 已投票。");
+ "30 秒內任何一邊過半就即時決定，否則時間到當未達共識。"+tally);
 }
 async function vote(agree){
  if(!member()||!state.room||state.room.stage!=="review"||state.busy)return;
  if(state.room.agree.includes(player)||state.room.disagree.includes(player))return;
+ if(C.decision(state.room).outcome || !state.room.voteStartedAt)return;
  state.busy=true;renderVote();
  try{await state.sdk.updateDoc(roomRef(),{[agree?"agree":"disagree"]:state.sdk.arrayUnion(player)});}
  catch(err){firebaseError(err,"提交投票");}
@@ -406,7 +474,7 @@ async function loadRound(round,current){
 function renderHistory(){
  const host=$("historyList");host.replaceChildren();
  if(!state.room){$("historyPanel").hidden=true;return;}
- const count=state.room.stage==="input"?state.room.round-1:state.room.round;
+ const count=state.room.stage==="input"||state.room.stage==="closed"?state.room.round-1:state.room.round;
  $("historyPanel").hidden=count<1;
  for(let i=count;i>=1;i--){
   const data=state.history.get(i);
@@ -426,17 +494,21 @@ function render(){
  txt("displayRoomCode",state.roomCode||"讀取中…");
  if(!state.room){
   txt("stageBadge","房間載入中…");
-  for(const id of ["lobby","inputStage","reviewStage","betweenStage","finishedStage"])$(id).hidden=true;
+  for(const id of ["lobby","inputStage","reviewStage","betweenStage","finishedStage","closedStage"])$(id).hidden=true;
+  $("closeRoom").hidden=true;
   return;
  }
  const stage=state.room.stage;
- const badges={lobby:"準備中",input:"⏱ 輸入倒數",review:"🗳️ 詞語揭曉",between:"🔄 下一輪",finished:"🏆 已成功"};
+ const badges={lobby:"準備中",input:"⏱ 輸入倒數",review:"🗳️ 30 秒投票",between:"🔄 下一輪",finished:"🏆 已成功",closed:"🔒 已關閉"};
+ $("closeRoom").hidden=!owner()||stage==="closed";
+ $("leaveRoom").textContent=owner()&&stage==="lobby"?"離開並關閉":stage==="input"||stage==="review"||stage==="between"?"返回主頁":"離開房間";
  txt("stageBadge",badges[stage]||stage);
  $("lobby").hidden=stage!=="lobby";
  $("inputStage").hidden=stage!=="input";
  $("reviewStage").hidden=stage!=="review";
  $("betweenStage").hidden=stage!=="between";
  $("finishedStage").hidden=stage!=="finished";
+ $("closedStage").hidden=stage!=="closed";
  if(stage==="lobby")renderLobby();
  if(stage==="input"){
   const count=coreResult();
@@ -462,10 +534,12 @@ function tick(){
  const stage=state.room.stage,result=coreResult();
  if(stage==="input"){
   renderTimer();
-  if(result.allSubmitted||roundedSeconds().expired)changeStage({stage:"review"});
+  if(result.allSubmitted||roundedSeconds().expired)changeStage({stage:"review",voteStartedAt:state.sdk.serverTimestamp()});
  }
- if(stage==="review"&&result.allVoted){
-  changeStage({stage:result.unanimous?"finished":"between"});
+ if(stage==="review"){
+  const decision=C.decision(state.room);
+  renderVoteClock();
+  if(decision.outcome)changeStage({stage:decision.outcome});
  }
  if(stage==="between"){
   // A short pause allows players to see the round result before the next 30 seconds.

@@ -145,8 +145,8 @@ service cloud.firestore {
       allow list: if request.auth != null && request.query.limit <= 30;
       allow create: if request.auth != null
         && roomId.matches('^[A-Za-z0-9]{20}$')
-        && request.resource.data.keys().hasAll(['code','listed','hostPlayer','memberNames','memberCount','stage','createdAt','updatedAt'])
-        && request.resource.data.keys().hasOnly(['code','listed','hostPlayer','memberNames','memberCount','stage','createdAt','updatedAt'])
+        && request.resource.data.keys().hasAll(['code','listed','hostPlayer','memberNames','memberCount','stage','createdAt','updatedAt','hostSeenAt'])
+        && request.resource.data.keys().hasOnly(['code','listed','hostPlayer','memberNames','memberCount','stage','createdAt','updatedAt','hostSeenAt'])
         && request.resource.data.code is string
         && request.resource.data.code.matches('^[0-9]{3}$')
         && request.resource.data.listed == true
@@ -156,6 +156,7 @@ service cloud.firestore {
         && request.resource.data.stage == 'lobby'
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time
+        && request.resource.data.hostSeenAt == request.time
         && futureRoom().hostUid == request.auth.uid
         && futureRoom().hostPlayer == request.resource.data.hostPlayer
         && futureRoom().members[request.resource.data.hostPlayer] == request.auth.uid
@@ -186,6 +187,36 @@ service cloud.firestore {
           && futureRoom().listed == true
           && futureRoom().members.size() >= 2
           && futureRoom().hostUid == request.auth.uid)
+        ||
+        // A non-host leaves the unstarted lobby. Update membership and public count together.
+        (resource.data.stage == 'lobby'
+          && changes().hasOnly(['memberNames','memberCount','updatedAt'])
+          && request.resource.data.updatedAt == request.time
+          && validSameWordName(futureRoom().lastLeft)
+          && originalRoom().members[futureRoom().lastLeft] == request.auth.uid
+          && request.auth.uid != originalRoom().hostUid
+          && request.resource.data.memberCount == resource.data.memberCount - 1
+          && request.resource.data.memberCount >= 1
+          && request.resource.data.memberNames == resource.data.memberNames.removeAll([futureRoom().lastLeft])
+          && futureRoom().stage == 'lobby'
+          && originalRoom().members.size() - 1 == futureRoom().members.size()
+          && futureRoom().members.size() == request.resource.data.memberCount)
+        ||
+        // Heartbeat from host; hidden after ten minutes without renewed timestamp.
+        (resource.data.stage == 'lobby'
+          && changes().hasOnly(['hostSeenAt'])
+          && request.resource.data.hostSeenAt == request.time
+          && originalRoom().stage == 'lobby'
+          && originalRoom().hostUid == request.auth.uid)
+        ||
+        // A lobby closed by its host disappears immediately for all viewers.
+        (resource.data.stage == 'lobby'
+          && changes().hasOnly(['stage','updatedAt'])
+          && request.resource.data.stage == 'closed'
+          && request.resource.data.updatedAt == request.time
+          && originalRoom().stage == 'lobby'
+          && originalRoom().hostUid == request.auth.uid
+          && futureRoom().stage == 'closed')
       );
       allow delete: if false;
     }
@@ -231,6 +262,33 @@ service cloud.firestore {
                   && getAfter(lobbyPath()).data.memberCount == request.resource.data.members.size()
                   && getAfter(lobbyPath()).data.memberNames.hasAll(request.resource.data.members.keys())));
       }
+      function leaveLobby() {
+        let n=request.resource.data.lastLeft;
+        let difference=resource.data.members.diff(request.resource.data.members);
+        return resource.data.stage=='lobby'
+          && delta().hasOnly(['members','lastLeft'])
+          && validSameWordName(n)
+          && samewordMember(n)
+          && resource.data.hostUid != request.auth.uid
+          && request.resource.data.members.size()==resource.data.members.size()-1
+          && difference.removedKeys().hasOnly([n])
+          && difference.removedKeys().size()==1
+          && difference.addedKeys().size()==0
+          && difference.changedKeys().size()==0
+          && (resource.data.get('listed',false)==false
+              || (getAfter(lobbyPath()).data.stage=='lobby'
+                  && getAfter(lobbyPath()).data.memberCount==request.resource.data.members.size()
+                  && !getAfter(lobbyPath()).data.memberNames.hasAny([n])));
+      }
+      function closeRoom() {
+        return resource.data.stage!='closed'
+          && resource.data.hostUid==request.auth.uid
+          && delta().hasOnly(['stage'])
+          && request.resource.data.stage=='closed'
+          && (resource.data.stage!='lobby'
+              || resource.data.get('listed',false)==false
+              || getAfter(lobbyPath()).data.stage=='closed');
+      }
       function hostStart() {
         return resource.data.stage == 'lobby'
           && request.auth.uid == resource.data.hostUid
@@ -255,8 +313,9 @@ service cloud.firestore {
       }
       function revealRound() {
         return resource.data.stage=='input'
-          && delta().hasOnly(['stage'])
+          && delta().hasOnly(['stage','voteStartedAt'])
           && request.resource.data.stage=='review'
+          && request.resource.data.voteStartedAt==request.time
           && (resource.data.submitted.size()==resource.data.members.size()
              || request.time>=resource.data.startedAt+duration.value(30,'s'));
       }
@@ -267,6 +326,10 @@ service cloud.firestore {
         let before=yesChange?resource.data.agree:resource.data.disagree;
         let n=newVoter(votes);
         return resource.data.stage=='review'
+          && resource.data.voteStartedAt is timestamp
+          && request.time<resource.data.voteStartedAt+duration.value(30,'s')
+          && resource.data.agree.size()<=resource.data.members.size()/2
+          && resource.data.disagree.size()<=resource.data.members.size()/2
           && (yesChange||noChange)
           && votes.size()==before.size()+1
           && votes==before.concat([n])
@@ -276,14 +339,15 @@ service cloud.firestore {
       }
       function evaluateVotes() {
         let people=resource.data.members.size();
-        let allVoted=resource.data.agree.size()+resource.data.disagree.size()==people;
-        let won=resource.data.agree.size()==people
-             && resource.data.disagree.size()==0
-             && resource.data.submitted.size()==people;
+        let threshold=people/2;
+        let yesWins=resource.data.agree.size()>threshold;
+        let noWins=resource.data.disagree.size()>threshold;
+        let timeUp=resource.data.voteStartedAt is timestamp
+          && request.time>=resource.data.voteStartedAt+duration.value(30,'s');
         return resource.data.stage=='review'
           && delta().hasOnly(['stage'])
-          && allVoted
-          && request.resource.data.stage==(won?'finished':'between');
+          && (yesWins||noWins||timeUp)
+          && request.resource.data.stage==(yesWins?'finished':'between');
       }
       function nextRound() {
         return resource.data.stage=='between'
@@ -331,7 +395,8 @@ service cloud.firestore {
 
       allow update: if request.auth != null
         && (joinRoom() || hostStart() || submitWordAtomically()
-            || revealRound() || voteOnce() || evaluateVotes() || nextRound());
+            || revealRound() || voteOnce() || evaluateVotes() || nextRound()
+            || leaveLobby() || closeRoom());
       allow delete: if false;
 
       match /rounds/{roundId}/answers/{playerId} {
