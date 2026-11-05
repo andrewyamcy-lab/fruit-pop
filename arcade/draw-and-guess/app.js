@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const state={
  sdk:null,db:null,uid:null,player:"",room:null,ref:null,code:"",
  unsubRoom:null,unsubLobbies:null,unsubStrokes:null,unsubGuesses:null,unsubChoices:null,
- lobbyState:"loading",availableLobbies:[],lastHeartbeatAt:0,
+ lobbyState:"loading",availableLobbies:[],lastHeartbeatAt:0,publicRoom:true,
  strokeKey:"",judgeKey:"",secret:null,loadingSecret:false,
  segments:[],pointer:null,strokePoints:[],gesture:0,seq:0,lastFlush:0,
  brush:"#232332",size:6,choiceUsed:false,
@@ -34,7 +34,7 @@ function isJoinableLobby(lobby,now=Date.now()){
 function renderAvailable(){
  const host=$("availableRooms");host.replaceChildren();
  if(state.lobbyState==="loading"||!state.db){
-  $("availableCount").textContent="連線中…";
+  $("availableCount").textContent="即時房間列表";
   host.appendChild(element("p","正在讀取朋友開放中嘅房間…","available-empty"));return;
  }
  if(state.lobbyState==="error"){
@@ -49,13 +49,13 @@ function renderAvailable(){
   host.appendChild(element("p","暫時未有可以加入嘅房間。你可以建立新房間，或者輸入朋友嘅六位房號。","available-empty"));return;
  }
  for(const item of items){
-  const row=element("div",undefined,"available-room");
-  const header=element("div",undefined,"horizontal");
+  const row=element("div",undefined,"available-item");
+  const header=element("div",undefined,"available-main");
   const info=element("div"),title=element("strong","🎨 "+named(item.hostPlayer)+" 嘅房間");
   const meta=element("small","房號 "+item.code+" · 等待開始");
   info.append(title,meta);
   header.append(info,element("span",item.memberCount+" / 7","badge success"));
-  const members=element("p","已加入："+(Array.isArray(item.memberNames)?item.memberNames.map(named).join("、"):"朋友"),"small");
+  const members=element("p","已加入："+(Array.isArray(item.memberNames)?item.memberNames.map(named).join("、"):"朋友"),"available-meta");
   const progress=element("div",undefined,"available-progress");
   const fill=element("span");fill.style.width=Math.max(0,Math.min(100,item.memberCount/7*100))+"%";progress.appendChild(fill);
   const button=element("button","一鍵加入房間 →","primary wide");
@@ -84,7 +84,7 @@ function startLobbyFeed(){
  });
 }
 async function hostHeartbeat(){
- if(!isHost()||state.room?.phase!=="lobby"||!state.db)return;
+ if(!isHost()||state.room?.phase!=="lobby"||!state.db||!state.publicRoom)return;
  const current=Date.now();if(current-state.lastHeartbeatAt<40000)return;
  state.lastHeartbeatAt=current;
  try{
@@ -150,6 +150,7 @@ async function createRoom(){
  const p=selectedPlayer();if(!Core.PLAYERS.includes(p)){pendingPlayerAction=()=>void createRoom();openPlayerPicker();return;}
  state.busy=true;$("createRoom").disabled=true;
  try{
+  const publicListing=$("listPublic").checked;
   for(let tries=0;tries<5;tries++){
    const code=randomCode(),ref=state.sdk.doc(state.db,ROOMS,code),publicRef=lobbyRef(code);
    try{
@@ -161,10 +162,10 @@ async function createRoom(){
       roster:[],phase:"lobby",turn:-1,artistId:"",artistUid:"",scores:{[p]:0},solved:{},
       startedAt:null,hintCategory:"",hintLength:0,options:[],boardVersion:0,
       revealedAnswer:"",createdAt:stamp});
-     tx.set(publicRef,{code,hostPlayer:p,memberNames:[p],memberCount:1,stage:"lobby",
+     if(publicListing)tx.set(publicRef,{code,hostPlayer:p,memberNames:[p],memberCount:1,stage:"lobby",
        createdAt:stamp,hostSeenAt:stamp});
     });
-    savePlayer(p);state.lastHeartbeatAt=Date.now();subscribeRoom(code);return;
+    savePlayer(p);state.lastHeartbeatAt=Date.now();state.publicRoom=publicListing;subscribeRoom(code);return;
    }catch(e){if(e.message==="CODE_COLLISION")continue;throw e;}
   }
   throw new Error("無法產生未使用嘅房號。");
@@ -222,7 +223,7 @@ function renderRoom(){
  const host=$("players");host.replaceChildren();
  for(const p of Core.PLAYERS){
   if(!r.members?.[p])continue;
-  const box=element("div",undefined,"player"+(p===state.player?" you":""));
+  const box=element("div",undefined,"room-player"+(p===state.player?" you":""));
   box.append(element("span",named(p)),element("span",p===r.artistId?"🎨":p===state.player?"（我）":"✓"));
   host.appendChild(box);
  }
