@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Friend Arcade">
-<meta name="description" content="七位朋友嘅遊戲中心：Fruit Pop、人像合成、即時排行榜，更多遊戲陸續登場。">
+<meta name="description" content="Friend Arcade 朋友遊戲中心：SameWord 同猜猜畫畫即時等待房間、Fruit Pop 排行榜、聚會日曆及更多遊戲。">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="icon" type="image/png" href="./icon-192.png">
@@ -153,6 +153,92 @@ h1,h2,h3,p{margin:0}
 }
 @media(max-width:350px){.hero-actions{display:grid;grid-template-columns:1fr}.hero-secondary,.hero-primary{justify-content:center}}
 
+
+/* Friend Arcade v3 — live-first home experience */
+:root{--ink:#29253a;--purple:#6b4baf;--line:#e8e4ee;--shadow:0 10px 30px #3827530c}
+.shell{width:min(1100px,calc(100% - 36px))}
+.topbar{padding-bottom:18px}
+.hero-home{min-height:300px;background:radial-gradient(circle at 86% 0%,#a484c955 0,transparent 40%),linear-gradient(124deg,#302949,#59447e 60%,#8065a0);box-shadow:0 20px 45px #34294c28}
+.hero-home .hero-copy{padding:39px 38px 38px}
+.hero-home h1{max-width:500px;font-size:clamp(33px,4.2vw,50px);letter-spacing:-1.8px}
+.hero-home p{max-width:440px}
+.hero-ticker{display:flex;align-items:center;gap:8px;color:#efdef7;font-size:11px;font-weight:800;margin-top:23px}
+.pulse-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#50d6a0;box-shadow:0 0 0 5px #50d6a01d;flex:0 0 10px}
+.hero-live{background:linear-gradient(135deg,#ffffff12,#efd4ff29);border-left:1px solid #ffffff28}
+.hero-live::after{content:"✦";font-size:132px;right:15px;top:-8px}
+.hero-live-number{position:relative;z-index:1;display:flex;align-items:baseline;gap:12px}
+.hero-live-number strong{font-size:clamp(62px,7vw,90px);font-weight:950;letter-spacing:-5px;line-height:1}
+.hero-live-number span{color:#ffdfed;font-weight:850;font-size:12px}
+.hero-live h2{font-size:19px;max-width:280px}
+.hero-live-jump{z-index:1;border:1px solid #ffffff70;background:#ffffff26;color:white;border-radius:13px;padding:11px 15px;font-weight:950;font-size:12px}
+.live-section{scroll-margin-top:22px;margin:27px 0 16px;background:#fff;border:1px solid #eee6f3;border-radius:27px;box-shadow:var(--shadow);padding:23px}
+.live-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:16px}
+.live-head h2{display:flex;align-items:center;gap:11px;flex-wrap:wrap;font-size:clamp(20px,2.4vw,26px);letter-spacing:-.6px;margin:5px 0}
+.live-head h2 .pulse-dot{width:11px;height:11px;flex-basis:11px}
+.live-head p{color:#81778f;font-size:12px;line-height:1.65}
+.live-count{display:inline-grid;place-items:center;min-width:29px;height:26px;padding:0 8px;background:#ede6fb;color:#6849a9;border-radius:9px;font-size:13px;letter-spacing:0}
+.live-head-links{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.live-head-links a{font-size:12px;color:#674b9b;background:#f4effb;border:1px solid #e9ddf7;border-radius:11px;padding:10px 12px;font-weight:900;white-space:nowrap}
+.live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.live-room{display:flex;flex-direction:column;gap:12px;border:1px solid #ece4f5;border-radius:21px;padding:18px;background:linear-gradient(150deg,#faf6ff 0,#fff 67%);min-width:0}
+.live-room.drawguess{background:linear-gradient(150deg,#fff4f8 0,#fff 68%);border-color:#f3e2eb}
+.live-room-top{display:flex;justify-content:space-between;gap:9px;align-items:center}
+.live-room-title{font-size:17px;font-weight:950;letter-spacing:-.4px}
+.live-room-badge{font-size:10px;font-weight:950;white-space:nowrap;padding:6px 9px;background:#e3f8ed;border-radius:999px;color:#237853}
+.live-room-meta{font-size:12px;color:#736783;line-height:1.6}
+.live-room-names{font-size:12px;color:#56486a;overflow-wrap:anywhere}
+.live-room-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.live-room-count{font-size:13px;font-weight:950}
+.live-room-spots{font-size:11px;color:#82748d}
+.live-room-track{height:7px;background:#ede5f5;border-radius:99px;overflow:hidden}
+.live-room-fill{height:100%;background:linear-gradient(90deg,#9869d3,#cf9aef);border-radius:99px}
+.live-room.drawguess .live-room-fill{background:linear-gradient(90deg,#dc79ae,#ffabca)}
+.live-room-join{display:block;text-align:center;border-radius:13px;padding:12px 14px;background:#413158;color:white;font-weight:950;font-size:13px;margin-top:auto}
+.live-room.drawguess .live-room-join{background:#704363}
+.live-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;gap:11px;background:linear-gradient(135deg,#fcf9ff,#fff9fc);border:1px dashed #e3d7ed;border-radius:20px;padding:25px 15px;color:#80728e;min-height:140px;font-size:13px;line-height:1.7}
+.live-empty-icon{font-size:31px}
+.live-empty strong{color:#493a5c;font-size:16px}
+.live-empty-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:9px}
+.live-empty-actions a{display:inline-block;padding:10px 13px;border-radius:12px;background:#f0e7ff;color:#62449a;font-weight:950;font-size:12px}
+.home-stats{margin:15px 0 27px}
+.home-stats .stat{border-radius:17px;padding:15px 18px}
+.home-stats .stat b>span{font-size:16px}
+.featured-heading{margin-top:32px}
+.featured-heading .eyebrow{display:block;margin-bottom:6px}
+.featured-games .game-card{transition:transform .2s ease,box-shadow .2s ease}
+.featured-games .game-card:hover{transform:translateY(-3px);box-shadow:0 15px 30px #3b27531b}
+.featured-games .game-visual{height:115px}
+.featured-games .game-card p{min-height:36px}
+.home-lower-grid{margin:30px 0 25px}
+.home-next-event{background:linear-gradient(135deg,#f8efff,#fff5f7);padding:16px;border-radius:16px;margin:12px 0 15px}
+.home-next-event h3{font-size:15px;margin-bottom:6px}
+.home-next-event p{font-size:12px;color:#766686;margin:0 0 10px}
+.home-next-event a{display:inline-block;color:#6c49a2;font-size:12px;font-weight:950}
+.home-scores-panel{padding-top:10px}
+@media(max-width:720px){
+ .shell{width:min(100% - 26px,560px)}
+ .hero-home{grid-template-columns:1fr}
+ .hero-home .hero-copy{padding:28px 23px 24px}
+ .hero-home h1{font-size:35px}
+ .hero-live{padding:20px 23px;min-height:0}
+ .hero-live-number strong{font-size:62px}
+ .hero-live h2{font-size:17px}
+ .hero-ticker{margin-top:17px}
+ .live-section{margin:17px 0 14px;border-radius:22px;padding:16px}
+ .live-head{display:block}
+ .live-head-links{justify-content:flex-start;margin-top:12px}
+ .live-grid{grid-template-columns:1fr}
+ .live-room{padding:15px}
+ .home-stats{margin-bottom:23px}
+ .home-stats .stat{padding:13px 10px}
+ .home-stats .stat b{font-size:19px}
+ .featured-games{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .featured-games .game-visual{height:98px}
+ .featured-games .game-card p{min-height:52px}
+ .home-lower-grid{margin-top:23px}
+}
+@media(max-width:360px){.hero-home .hero-actions{display:grid;grid-template-columns:1fr}.hero-home .hero-actions>*{justify-content:center}.live-head-links a{padding:9px 10px}}
+
 </style>
 </head>
 <body>
@@ -163,54 +249,71 @@ h1,h2,h3,p{margin:0}
 </header>
 <main>
 <section class="view" id="view-home" data-view="home">
-<div class="hero">
-  <div class="hero-copy">
-    <span class="eyebrow">SEVEN FRIENDS · ONE HOME</span>
-    <h1 id="welcome">七個朋友，一個共同基地。</h1>
-    <p>約聚會、玩小遊戲、睇朋友排名，一個地方搞掂。下一次見面，由呢度開始。</p>
-    <div class="hero-actions">
-      <a class="primary hero-primary" href="./gatherings/">📅 安排聚會 <span aria-hidden="true">→</span></a>
-      <button class="hero-secondary" type="button" data-launch="fruit-pop">🍉 玩 Fruit Pop</button>
+  <section class="hero hero-home" aria-labelledby="welcome">
+    <div class="hero-copy">
+      <span class="eyebrow">SEVEN FRIENDS · ONE PLAYGROUND</span>
+      <h1 id="welcome">今晚玩咩好？</h1>
+      <p>同朋友即刻開局，或者一齊約下次聚會。所有遊戲、房間同排名，集中喺呢度。</p>
+      <div class="hero-actions">
+        <button class="primary hero-primary" type="button" id="jumpLive">🟢 睇等待房間 <span aria-hidden="true">→</span></button>
+        <button class="hero-secondary" type="button" data-switch="games">🎮 探索遊戲</button>
+      </div>
+      <div class="hero-ticker"><span class="pulse-dot" aria-hidden="true"></span><span>SameWord 同 Draw &amp; Guess 房間即時同步</span></div>
     </div>
+    <div class="hero-feature hero-live">
+      <span class="feature-eyebrow">✦ LIVE LOBBIES</span>
+      <div class="hero-live-number"><strong id="heroRoomsCount">—</strong><span>間等待中嘅房間</span></div>
+      <h2>朋友已經喺度等緊你？</h2>
+      <p id="heroRoomsHint">正在連接即時房間…</p>
+      <button class="hero-live-jump" type="button" data-scroll-live>查看即時房間 →</button>
+    </div>
+  </section>
+
+  <section class="live-section" id="liveRooms" aria-labelledby="liveRoomsHeading">
+    <div class="live-head">
+      <div>
+        <span class="eyebrow">PLAY TOGETHER · LIVE NOW</span>
+        <h2 id="liveRoomsHeading"><span class="pulse-dot" aria-hidden="true"></span> 等待中嘅房間 <span class="live-count" id="liveRoomBadge">—</span></h2>
+        <p id="liveRoomsStatus" role="status">正在讀取 SameWord 同 Draw &amp; Guess 房間…</p>
+      </div>
+      <div class="live-head-links"><a href="./sameword/">＋ SameWord 開房</a><a href="./draw-and-guess/">＋ 猜猜畫畫開房</a></div>
+    </div>
+    <div class="live-grid" id="liveRoomGrid" aria-live="polite" aria-relevant="additions removals">
+      <div class="live-empty">正在連接朋友嘅遊戲房間…</div>
+    </div>
+  </section>
+
+  <div class="stat-grid home-stats" aria-label="遊戲中心概況">
+    <div class="stat"><b>7 <span aria-hidden="true">💜</span></b><span>固定朋友玩家</span></div>
+    <div class="stat"><b id="activeRoomsStat">—</b><span>等待中房間</span></div>
+    <div class="stat"><b id="yourBest">—</b><span>Fruit Pop 最高分</span></div>
   </div>
-  <div class="hero-feature">
-    <span class="feature-eyebrow">✦ NEXT GATHERING</span>
-    <span class="feature-icon" aria-hidden="true">📅</span>
-    <h2 id="heroGatheringTitle">下一次聚會，由你哋決定！</h2>
-    <p id="heroGatheringDate">正在查看有冇已確認嘅聚會…</p>
-    <a id="heroGatheringLink" href="./gatherings/">查看聚會日曆 →</a>
+
+  <div class="headline featured-heading"><div><span class="eyebrow">PICK YOUR GAME</span><h2>🎮 探索遊戲</h2></div><button class="mini-link" type="button" data-switch="games">全部遊戲 →</button></div>
+  <div class="games featured-games">
+    <article class="game-card"><div class="game-visual visual-fruit" aria-hidden="true">🍉</div><span class="tag live">單人挑戰</span><h3>Fruit Pop</h3><p>合成人像球，挑戰朋友最高分。</p><button class="game-btn" type="button" data-launch="fruit-pop">開始挑戰 →</button></article>
+    <article class="game-card"><div class="game-visual visual-sameword" aria-hidden="true">🧠 💬</div><span class="tag live">2–7 人即時</span><h3>SameWord</h3><p>30 秒寫詞、投票，考驗朋友默契。</p><a class="game-btn" href="./sameword/">開始遊戲 →</a></article>
+    <article class="game-card"><div class="game-visual visual-draw" aria-hidden="true">🎨 ✏️</div><span class="tag live">2–7 人即時</span><h3>猜猜畫畫</h3><p>輪流畫畫、估答案、即時搶分。</p><a class="game-btn" href="./draw-and-guess/">開始遊戲 →</a></article>
+    <article class="game-card"><div class="game-visual visual-fish" aria-hidden="true">🐠</div><span class="tag">休閒角落</span><h3>Aquarium</h3><p>餵吓七條人像魚，輕鬆一下。</p><a class="game-btn" href="./aquarium/">去魚缸 →</a></article>
+    <article class="game-card"><div class="game-visual visual-villain" aria-hidden="true">🩴 🧧</div><span class="tag">港式解壓</span><h3>打小人</h3><p>打走煩惱，攞個好運祝福。</p><a class="game-btn" href="./da-siu-yan/">開始遊戲 →</a></article>
+    <article class="game-card"><div class="game-visual visual-calendar" aria-hidden="true">📅</div><span class="tag">朋友聚會</span><h3>Gatherings</h3><p>揀得閒日子，搵出大家有空嘅一日。</p><a class="game-btn" href="./gatherings/">安排聚會 →</a></article>
   </div>
-</div>
-<div class="stat-grid">
- <div class="stat"><b>7</b><span>固定朋友玩家</span></div>
- <div class="stat"><b>6</b><span>已推出遊戲與功能</span></div>
- <div class="stat"><b id="yourBest">—</b><span>你的 Fruit Pop 最高分</span></div>
-</div>
-<div class="dashboard-grid">
- <section class="panel home-dashboard-panel" aria-labelledby="gatheringsHeading">
-   <div class="dashboard-heading"><div><span class="eyebrow">OUR PLANS</span><h2 id="gatheringsHeading">📅 聚會日程</h2></div><a class="mini-link" href="./gatherings/">管理聚會 →</a></div>
-   <p class="dashboard-subtitle" id="gatheringsStatus" aria-live="polite">正在同步聚會資料…</p>
-   <div class="upcoming-list" id="upcomingGatherings"><p class="dashboard-empty">正在讀取聚會…</p></div>
- </section>
- <section class="panel home-dashboard-panel" aria-labelledby="activityHeading">
-   <div class="dashboard-heading"><div><span class="eyebrow">FRIENDS' ACTIVITY</span><h2 id="activityHeading">✨ 朋友近況</h2></div><button class="mini-link" type="button" data-switch="leaderboard">睇排行榜 →</button></div>
-   <p class="dashboard-subtitle">由已記錄嘅遊戲成績同聚會資料整理，唔會顯示虛構動態。</p>
-   <div class="activity-list" id="activityFeed" aria-live="polite"><p class="dashboard-empty">正在讀取最新紀錄…</p></div>
- </section>
-</div>
-<div class="headline"><h2>🎮 遊戲與功能</h2><button class="mini-link" type="button" data-switch="games">全部遊戲 →</button></div>
-<div class="games">
-<article class="game-card"><div class="game-visual visual-fruit" aria-hidden="true">🍉</div><span class="tag live">現正開放</span><h3>Fruit Pop</h3><p>10 級人像合成遊戲，連擊得分、挑戰朋友紀錄。</p><button class="game-btn" data-launch="fruit-pop">立即挑戰 →</button></article>
-<article class="game-card"><div class="game-visual visual-fish" aria-hidden="true">🐠 🐟</div><span class="tag live">新功能 · 現正開放</span><h3>Aquarium</h3><p>7 條 Fruit Pop 人像小魚自由游動，可以餵魚同切換日夜模式。</p><a class="game-btn" href="./aquarium/">進入水族箱 →</a></article>
-<article class="game-card"><div class="game-visual visual-calendar" aria-hidden="true">📅</div><span class="tag live">新功能 · 已推出</span><h3>Gatherings</h3><p>七位朋友揀得閒日子，自動搵出 7/7 都有空嘅聚會日期。</p><a class="game-btn" href="./gatherings/">安排聚會 →</a></article>
-<article class="game-card"><div class="game-visual visual-villain" aria-hidden="true">🩴 🧧</div><span class="tag live">港式新遊戲 · 已推出</span><h3>打小人</h3><p>寫上小人名字，拍打 10 次，打走煩惱攞好運祝福。</p><a class="game-btn" href="./da-siu-yan/">開始打小人 →</a></article>
-<article class="game-card"><div class="game-visual visual-sameword" aria-hidden="true">🧠 💬</div><span class="tag live">多人遊戲 · 新推出</span><h3>SameWord</h3><p>2–7 人即時默契挑戰，30 秒答題、投票同睇歷史詞語。</p><a class="game-btn" href="./sameword/">建立房間 →</a></article>
-<article class="game-card"><div class="game-visual visual-draw" aria-hidden="true">🎨 ✏️</div><span class="tag live">多人遊戲 · 新推出</span><h3>猜猜畫畫</h3><p>2–7 人即時畫畫，30 秒後有提示、60 秒後四選一。</p><a class="game-btn" href="./draw-and-guess/">建立房間 →</a></article>
-<article class="game-card"><div class="game-visual visual-guess" aria-hidden="true">🧠</div><span class="tag">即將推出</span><h3>Guess Who?</h3><p>睇相估朋友，考考你哋有幾熟。</p><button class="game-btn soon" disabled>籌備中</button></article>
-<article class="game-card"><div class="game-visual visual-memory" aria-hidden="true">🃏</div><span class="tag">即將推出</span><h3>Memory Match</h3><p>朋友人像翻牌配對，鬥快又鬥記性。</p><button class="game-btn soon" disabled>籌備中</button></article>
-</div>
-<div class="headline"><h2>🏆 玩家排行榜</h2><button class="mini-link" type="button" data-switch="leaderboard">查看全部 →</button></div>
-<div class="panel"><h3>Fruit Pop · 最高分</h3><p>同一個 Firebase 排行榜，分數會跨裝置同步。</p><table class="score-table"><thead><tr><th>名次</th><th>玩家</th><th>最高分</th></tr></thead><tbody id="topScores"></tbody></table><div class="status"><i class="dot" id="cloudDot"></i><span id="cloudStatus">正在連接排行榜…</span></div></div>
+
+  <div class="dashboard-grid home-lower-grid">
+    <section class="panel home-dashboard-panel" aria-labelledby="gatheringsHeading">
+      <div class="dashboard-heading"><div><span class="eyebrow">NEXT UP · FRIENDS</span><h2 id="gatheringsHeading">📅 下一次聚會</h2></div><a class="mini-link" href="./gatherings/">管理聚會 →</a></div>
+      <div class="home-next-event"><h3 id="heroGatheringTitle">下一次聚會，由你哋決定！</h3><p id="heroGatheringDate">正在讀取聚會日子…</p><a id="heroGatheringLink" href="./gatherings/">查看聚會日曆 →</a></div>
+      <p class="dashboard-subtitle" id="gatheringsStatus" aria-live="polite">正在同步聚會資料…</p>
+      <div class="upcoming-list" id="upcomingGatherings"><p class="dashboard-empty">正在讀取聚會…</p></div>
+    </section>
+    <section class="panel home-dashboard-panel" aria-labelledby="activityHeading">
+      <div class="dashboard-heading"><div><span class="eyebrow">FRIENDS' ACTIVITY</span><h2 id="activityHeading">✨ 朋友近況</h2></div><button class="mini-link" type="button" data-switch="leaderboard">睇排行榜 →</button></div>
+      <p class="dashboard-subtitle">只顯示真正記錄嘅遊戲成績同聚會，唔會虛構動態。</p>
+      <div class="activity-list" id="activityFeed" aria-live="polite"><p class="dashboard-empty">正在讀取最新紀錄…</p></div>
+    </section>
+  </div>
+  <div class="headline"><h2>🏆 Fruit Pop 最高分</h2><button class="mini-link" type="button" data-switch="leaderboard">完整排行榜 →</button></div>
+  <div class="panel home-scores-panel"><table class="score-table"><thead><tr><th>名次</th><th>玩家</th><th>最高分</th></tr></thead><tbody id="topScores"></tbody></table><div class="status"><i class="dot" id="cloudDot"></i><span id="cloudStatus">正在連接排行榜…</span></div></div>
 </section>
 <section class="view" id="view-games" data-view="games" hidden>
 <div class="headline"><h2>🎮 遊戲與功能</h2><span class="eyebrow">GAME LIBRARY</span></div>

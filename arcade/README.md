@@ -20,3 +20,12 @@ GitHub 暫時未有建立 `andrewyamcy-lab.github.io` repository 嘅連接功能
 - 選擇名稱並唔等於驗證玩家身份。
 - 新增遊戲時，使用各自獨立的 Firestore collection、驗證規則與排行榜。
 - 當成績資料持續變多，應考慮用雲端函數維護各玩家最高分的匯總資料，避免每次讀取全數遊戲紀錄。
+
+
+## Friend Arcade 3.0 — Live-first 首頁（2026-11-05）
+- 首頁優先顯示 SameWord 及 Draw & Guess 公開等待房間，實時顯示房主、房號、已加入玩家、剩餘位置。
+- 只讀取 `friendarcade_sameword_lobbies_v1` 及 `friendarcade_drawguess_lobbies_v1` 公開摘要，唔會喺首頁讀取未揭曉答案、私密房間或玩家 UID。
+- 使用 Firebase Anonymous Authentication 進行兩組限額 30 筆嘅即時監聽。首頁只顯示 stage=lobby、1–6 人、房主 10 分鐘內有 heartbeat 嘅房間；狀態以遊戲實際房間交易為準。
+- SameWord 一鍵加入透過 `?code=007`；Draw & Guess 一鍵加入透過 `?room=XXXXXX&join=1`，遊戲會再次驗證房間狀態及玩家名稱。
+- 無等待房間時顯示建立房間選項；部分 Firebase feed 失敗時仍會顯示其他遊戲嘅可用房間，唔會虛構在線人數。
+- GitHub Pages 部署唔會部署 Firestore Rules。兩款遊戲嘅最新 Rules 必須已手動 Publish，匿名登入必須已啟用；請用兩部裝置測試首頁即時顯示、加入、滿房、開始、過期及斷線場景。

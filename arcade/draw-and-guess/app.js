@@ -206,7 +206,7 @@ async function joinRoom(){
 function subscribeRoom(code){
  if(state.unsubRoom)state.unsubRoom();
  cleanSubs();state.code=code;state.room=null;
- const url=new URL(location.href);url.searchParams.set("room",code);history.replaceState({},'',url.pathname+url.search);
+ const url=new URL(location.href);url.searchParams.set("room",code);url.searchParams.delete("join");history.replaceState({},'',url.pathname+url.search);
  $("roomCode").textContent=code;showGame();
  state.ref=state.sdk.doc(state.db,ROOMS,code);
  state.unsubRoom=state.sdk.onSnapshot(state.ref,snap=>{
@@ -595,6 +595,7 @@ async function connect(){
   const code=new URLSearchParams(location.search).get("room")?.toUpperCase();
   if(Core.validCode(code))$("roomCodeInput").value=code;
   showEntry();resetCanvas();startLobbyFeed();
+   if(Core.validCode(code)&&new URLSearchParams(location.search).get("join")==="1")await joinRoom();
  }catch(e){state.lobbyState="error";renderAvailable();err(e,"Firebase 無法連接，請確認匿名登入已啟用。");}
 }
 window.addEventListener("pagehide",()=>{state.unsubRoom?.();state.unsubLobbies?.();cleanSubs();});
